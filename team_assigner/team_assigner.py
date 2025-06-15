@@ -26,7 +26,7 @@ class TeamAssigner:
         """
         Initialize the TeamAssigner with specified team jersey descriptions.
 
-        Args: 123
+        Args: 
             team_1_class_name (str): Description of Team 1's jersey appearance.
             team_2_class_name (str): Description of Team 2's jersey appearance.
         """
