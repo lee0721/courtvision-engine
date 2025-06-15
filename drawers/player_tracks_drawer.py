@@ -52,9 +52,9 @@ class PlayerTracksDrawer:
                 team_id = player_assignment_for_frame.get(track_id,self.default_player_team_id)
 
                 if team_id == 1:
-                    color = self.team_1_color
+                    color = self.team_1_color[::-1]  # RGB to BGR
                 else:
-                    color = self.team_2_color
+                    color = self.team_2_color[::-1]
 
                 frame = draw_ellipse(frame, player["bbox"],color, track_id)
 

@@ -47,7 +47,7 @@ class TeamAssigner:
         }
 
         self.team_1_color_rgb = self.color_name_to_rgb.get(self.team_1_class_name, [255, 255, 255])
-        self.team_2_color_rgb = self.color_name_to_rgb.get(self.team_2_class_name, [0, 0, 0])
+        self.team_2_color_rgb = self.color_name_to_rgb.get(self.team_2_class_name, [0, 0, 139])
 
     def load_model(self):
         """
