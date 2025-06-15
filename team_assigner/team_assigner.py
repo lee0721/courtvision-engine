@@ -38,9 +38,9 @@ class TeamAssigner:
         
         self.color_name_to_rgb = {
             "white shirt": [255, 255, 255],
-            "dark blue shirt": [0, 0, 139],
+            "dark blue shirt": [25, 25, 112],
             "red shirt": [255, 0, 0],
-            "dark red shirt": [139, 0, 0],
+            "dark red shirt": [176, 23, 31],
             "blue shirt": [0, 0, 255],
             "yellow shirt": [255, 255, 0],
             "black shirt": [0, 0, 0],
