@@ -107,7 +107,11 @@ def main():
 
     # Draw output   
     # Initialize Drawers
-    player_tracks_drawer = PlayerTracksDrawer()
+    # 改成這樣，把 team_assigner 偵測的顏色直接傳進去
+    player_tracks_drawer = PlayerTracksDrawer(
+        team_1_color=team_assigner.team_1_color_rgb,
+        team_2_color=team_assigner.team_2_color_rgb
+    )
     ball_tracks_drawer = BallTracksDrawer()
     court_keypoint_drawer = CourtKeypointDrawer()
     team_ball_control_drawer = TeamBallControlDrawer()

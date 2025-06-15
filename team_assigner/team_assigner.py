@@ -35,6 +35,19 @@ class TeamAssigner:
     
         self.team_1_class_name = team_1_class_name
         self.team_2_class_name = team_2_class_name
+        
+        self.color_name_to_rgb = {
+            "white shirt": [255, 255, 255],
+            "dark blue shirt": [0, 0, 139],
+            "red shirt": [255, 0, 0],
+            "dark red shirt": [139, 0, 0],
+            "blue shirt": [0, 0, 255],
+            "yellow shirt": [255, 255, 0],
+            "black shirt": [0, 0, 0],
+        }
+
+        self.team_1_color_rgb = self.color_name_to_rgb.get(self.team_1_class_name, [255, 255, 255])
+        self.team_2_color_rgb = self.color_name_to_rgb.get(self.team_2_class_name, [0, 0, 139])
 
     def load_model(self):
         """
