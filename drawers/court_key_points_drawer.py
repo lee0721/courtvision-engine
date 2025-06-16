@@ -27,7 +27,7 @@ class CourtKeypointDrawer:
             color=sv.Color.from_hex(self.keypoint_color),
             text_color=sv.Color.WHITE,
             text_scale=0.5,
-            text_thickness=2
+            text_thickness=1.5
         )
         
         output_frames = []
