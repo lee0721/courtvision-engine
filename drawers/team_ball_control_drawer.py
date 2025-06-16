@@ -70,7 +70,7 @@ class TeamBallControlDrawer:
         box_height = int(frame_height * 0.10)
         margin = 30
 
-        rect_x2 = frame_width - margin - 200
+        rect_x2 = frame_width - margin - 500
         rect_x1 = rect_x2 - box_width
         rect_y2 = frame_height - margin
         rect_y1 = rect_y2 - box_height
