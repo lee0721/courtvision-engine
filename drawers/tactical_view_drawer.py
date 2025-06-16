@@ -85,7 +85,7 @@ class TacticalViewDrawer:
                     cv2.circle(frame, (x, y), player_radius, color, -1)
                     
                     # Add player ID
-                    #cv2.putText(frame, str(player_id), (x-4, y+4), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+                    cv2.putText(frame, str(player_id), (x-4, y+4), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
                     
                     # Highlight player with ball
                     if player_id == player_with_ball:
