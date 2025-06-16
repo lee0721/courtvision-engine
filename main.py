@@ -117,7 +117,10 @@ def main():
     team_ball_control_drawer = TeamBallControlDrawer()
     frame_number_drawer = FrameNumberDrawer()
     pass_and_interceptions_drawer = PassInterceptionDrawer()
-    tactical_view_drawer = TacticalViewDrawer()
+    tactical_view_drawer = TacticalViewDrawer(
+        team_1_color=team_assigner.team_1_color_rgb,
+        team_2_color=team_assigner.team_2_color_rgb
+    )
     speed_and_distance_drawer = SpeedAndDistanceDrawer()
 
     ## Draw object Tracks
