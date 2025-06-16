@@ -6,8 +6,6 @@ class TacticalViewDrawer:
         self.start_y = 120
         self.team_1_color = team_1_color
         self.team_2_color = team_2_color
-        self.width = 1000
-        self.height = 2000
 
     def draw(self, 
              video_frames, 
