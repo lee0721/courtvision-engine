@@ -68,7 +68,7 @@ class PassInterceptionDrawer:
     
     def draw_frame(self, frame, frame_num, passes, interceptions):
         frame_height, frame_width = frame.shape[:2]
-        rect_width = int(frame_width * 0.20)
+        rect_width = int(frame_width * 0.25)
         rect_height = int(frame_height * 0.10)
         margin = 30
 
