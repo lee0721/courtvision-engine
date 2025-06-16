@@ -93,8 +93,14 @@ class TeamBallControlDrawer:
         text_y2 = int(frame_height * 0.88)
 
 
-        cv2.rectangle(overlay, (rect_x1, rect_y1), (rect_x2, rect_y2), (255,255,255), -1 )
-        alpha = 0.8
+        radius = 20
+        cv2.rectangle(overlay, (rect_x1 + radius, rect_y1), (rect_x2 - radius, rect_y2), (255, 255, 255), -1)
+        cv2.rectangle(overlay, (rect_x1, rect_y1 + radius), (rect_x2, rect_y2 - radius), (255, 255, 255), -1)
+        cv2.circle(overlay, (rect_x1 + radius, rect_y1 + radius), radius, (255, 255, 255), -1)
+        cv2.circle(overlay, (rect_x2 - radius, rect_y1 + radius), radius, (255, 255, 255), -1)
+        cv2.circle(overlay, (rect_x1 + radius, rect_y2 - radius), radius, (255, 255, 255), -1)
+        cv2.circle(overlay, (rect_x2 - radius, rect_y2 - radius), radius, (255, 255, 255), -1)
+        alpha = 0.6
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
         team_ball_control_till_frame = team_ball_control[:frame_num+1]
