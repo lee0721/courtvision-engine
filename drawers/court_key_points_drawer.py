@@ -13,12 +13,14 @@ class CourtKeypointDrawer:
         triangle_size (int): Size of the inverted triangle (base width in pixels).
         text_scale (float): Scale of the text for number labels.
         text_thickness (int): Thickness of the text for number labels.
+        conf_threshold (float): Confidence threshold for valid keypoints.
     """
     def __init__(self):
         self.keypoint_color = '#ff2c2c'
         self.triangle_size = 10  # Base width of the inverted triangle
         self.text_scale = 0.5
         self.text_thickness = 1
+        self.conf_threshold = 0.5  # Ignore keypoints with confidence below this
         # Set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -51,8 +53,8 @@ class CourtKeypointDrawer:
 
         Args:
             frames (list): A list of frames (as NumPy arrays) on which to draw.
-            court_keypoints (list): A corresponding list of lists where each sub-list
-                contains the keypoint data (e.g., [x, y] or [x, y, id]) for that frame.
+            court_keypoints (list): A corresponding list of Keypoints objects where each
+                contains [x, y, conf] data for that frame.
 
         Returns:
             list: A list of frames with keypoints drawn on them.
@@ -69,11 +71,13 @@ class CourtKeypointDrawer:
             annotated_frame = frame.copy()
             keypoints = court_keypoints[index]
             
-            # Convert to NumPy if necessary
-            keypoints_numpy = keypoints.cpu().numpy() if hasattr(keypoints, 'cpu') else keypoints
+            # Convert to Keypoints object if necessary
+            keypoints_numpy = keypoints.cpu() if hasattr(keypoints, 'cpu') else keypoints
             
             # Log keypoints for debugging
-            logging.info(f"Frame {index}: keypoints shape = {keypoints_numpy.shape}, keypoints = {keypoints_numpy}")
+            logging.info(f"Frame {index}: keypoints shape = {keypoints_numpy.shape}, "
+                        f"xy shape = {keypoints_numpy.xy.shape}, "
+                        f"conf = {keypoints_numpy.conf[0] if hasattr(keypoints_numpy, 'conf') else 'N/A'}")
             
             # Draw number labels
             try:
@@ -86,17 +90,15 @@ class CourtKeypointDrawer:
                 output_frames.append(annotated_frame)
                 continue
             
-            # Draw inverted triangles
+            # Draw inverted triangles for valid keypoints
             try:
-                # Handle different keypoint formats
-                for i, keypoint in enumerate(keypoints_numpy):
-                    # Assume keypoint is [x, y] or [x, y, id]
-                    if len(keypoint) >= 2:
-                        x, y = keypoint[:2]
-                    else:
-                        logging.warning(f"Invalid keypoint format at index {i}: {keypoint}")
-                        continue
-                    
+                # Extract coordinates and confidences
+                coords = keypoints_numpy.xy[0]  # Shape: (18, 2)
+                confs = keypoints_numpy.conf[0] if hasattr(keypoints_numpy, 'conf') else np.ones(len(coords))
+                
+                for i, (x, y) in enumerate(coords):
+                    if confs[i] < self.conf_threshold or (x == 0 and y == 0):
+                        continue  # Skip low-confidence or invalid keypoints
                     # Adjust y-coordinate for triangle below text
                     text_height = int(15 * self.text_scale)
                     triangle_y = int(y + text_height + self.triangle_size // 2)
