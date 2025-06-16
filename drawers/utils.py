@@ -94,3 +94,37 @@ def draw_ellipse(frame,bbox,color,track_id=None):
         )
 
     return frame
+
+def draw_rounded_rectangle(img, top_left, bottom_right, radius, color, alpha=1.0):
+    """
+    Draws a filled rounded rectangle on the image with optional transparency.
+
+    Args:
+        img (np.ndarray): The target image to draw on.
+        top_left (tuple): (x1, y1) of rectangle.
+        bottom_right (tuple): (x2, y2) of rectangle.
+        radius (int): Radius of corner circles.
+        color (tuple): Fill color in BGR (e.g., (255,255,255)).
+        alpha (float): Transparency (1.0 = solid, 0 = invisible).
+
+    Returns:
+        np.ndarray: The image with the rounded rectangle drawn.
+    """
+    overlay = img.copy()
+    x1, y1 = top_left
+    x2, y2 = bottom_right
+
+    # 中間矩形
+    cv2.rectangle(overlay, (x1 + radius, y1), (x2 - radius, y2), color, -1)
+    cv2.rectangle(overlay, (x1, y1 + radius), (x2, y2 - radius), color, -1)
+
+    # 四個圓角
+    cv2.circle(overlay, (x1 + radius, y1 + radius), radius, color, -1)
+    cv2.circle(overlay, (x2 - radius, y1 + radius), radius, color, -1)
+    cv2.circle(overlay, (x1 + radius, y2 - radius), radius, color, -1)
+    cv2.circle(overlay, (x2 - radius, y2 - radius), radius, color, -1)
+
+    # 套用透明度
+    cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+
+    return img

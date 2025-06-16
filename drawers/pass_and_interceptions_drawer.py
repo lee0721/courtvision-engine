@@ -1,3 +1,4 @@
+from utils import draw_rounded_rectangle
 import cv2
 import numpy as np
 
@@ -66,41 +67,20 @@ class PassInterceptionDrawer:
         return output_video_frames
     
     def draw_frame(self, frame, frame_num, passes, interceptions):
-        """
-        Draw a semi-transparent overlay of pass and interception counts on a single frame.
-
-        Args:
-            frame (numpy.ndarray): The current video frame on which the overlay will be drawn.
-            frame_num (int): The index of the current frame.
-            passes (list): A list of pass events up to this frame.
-            interceptions (list): A list of interception events up to this frame.
-
-        Returns:
-            numpy.ndarray: The frame with the semi-transparent overlay and statistics.
-        """
-        # Draw a semi-transparent rectangle
-        overlay = frame.copy()
         font_scale = 0.7
-        font_thickness=2
+        font_thickness = 2
 
-        # Overlay Position
-        frame_height, frame_width = overlay.shape[:2]
-        rect_x1 = int(frame_width * 0.16) 
-        rect_y1 = int(frame_height * 0.75)
-        rect_x2 = int(frame_width * 0.55)  
-        rect_y2 = int(frame_height * 0.90)
+        frame_height, frame_width = frame.shape[:2]
+        rect_width = int(frame_width * 0.38)
+        rect_height = int(frame_height * 0.12)
 
-        radius = 20
-        cv2.rectangle(overlay, (rect_x1 + radius, rect_y1), (rect_x2 - radius, rect_y2), (255, 255, 255), -1)
-        cv2.rectangle(overlay, (rect_x1, rect_y1 + radius), (rect_x2, rect_y2 - radius), (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x1 + radius, rect_y1 + radius), radius, (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x2 - radius, rect_y1 + radius), radius, (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x1 + radius, rect_y2 - radius), radius, (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x2 - radius, rect_y2 - radius), radius, (255, 255, 255), -1)
-        alpha = 0.6
-        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        rect_x2 = frame_width - 20
+        rect_y2 = frame_height - 20
+        rect_x1 = rect_x2 - rect_width
+        rect_y1 = rect_y2 - rect_height
 
-        # Get stats until current frame
+        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), 20, (255, 255, 255), alpha=0.6)
+
         passes_till_frame = passes[:frame_num + 1]
         interceptions_till_frame = interceptions[:frame_num + 1]
 
@@ -118,7 +98,6 @@ class PassInterceptionDrawer:
         center_x = (rect_x1 + rect_x2) // 2
         center_y = (rect_y1 + rect_y2) // 2
 
-        # Place two lines of text centered vertically
         spacing = 10
         text_y1 = center_y - spacing
         text_y2 = center_y + text2_size[1] + spacing

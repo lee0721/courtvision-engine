@@ -1,3 +1,4 @@
+from utils import draw_rounded_rectangle
 import cv2 
 import numpy as np
 
@@ -75,31 +76,23 @@ class TeamBallControlDrawer:
         Returns:
             numpy.ndarray: The frame with the semi-transparent overlay and statistics.
         """
-        
-        # Draw a semi-transparent rectaggle 
-        overlay = frame.copy()
         font_scale = 0.7
         font_thickness=2
-        
-        # Overlay Position
-        frame_height, frame_width = overlay.shape[:2]
-        rect_x1 = int(frame_width * 0.60) 
-        rect_y1 = int(frame_height * 0.75)
-        rect_x2 = int(frame_width * 0.99)  
-        rect_y2 = int(frame_height * 0.90)
 
-        radius = 20
-        cv2.rectangle(overlay, (rect_x1 + radius, rect_y1), (rect_x2 - radius, rect_y2), (255, 255, 255), -1)
-        cv2.rectangle(overlay, (rect_x1, rect_y1 + radius), (rect_x2, rect_y2 - radius), (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x1 + radius, rect_y1 + radius), radius, (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x2 - radius, rect_y1 + radius), radius, (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x1 + radius, rect_y2 - radius), radius, (255, 255, 255), -1)
-        cv2.circle(overlay, (rect_x2 - radius, rect_y2 - radius), radius, (255, 255, 255), -1)
-        alpha = 0.6
-        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        # Overlay Position - smaller and centered lower right
+        frame_height, frame_width = frame.shape[:2]
+        box_width = int(frame_width * 0.35)
+        box_height = int(frame_height * 0.13)
+        margin = 30
+
+        rect_x2 = frame_width - margin
+        rect_x1 = rect_x2 - box_width
+        rect_y2 = frame_height - margin
+        rect_y1 = rect_y2 - box_height
+
+        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), radius=20, color=(255, 255, 255), alpha=0.6)
 
         team_ball_control_till_frame = team_ball_control[:frame_num+1]
-        # Get the number of time each team had ball control
         team_1_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==1].shape[0]
         team_2_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==2].shape[0]
         team_1 = team_1_num_frames/(team_ball_control_till_frame.shape[0])
@@ -112,13 +105,14 @@ class TeamBallControlDrawer:
         (text_width2, text_height2), _ = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
 
         center_x = (rect_x1 + rect_x2) // 2
+        center_y = (rect_y1 + rect_y2) // 2
+        spacing = 10
+
+        text_y1 = center_y - spacing
+        text_y2 = center_y + text_height2 + spacing
+
         text_x1 = center_x - text_width1 // 2
         text_x2 = center_x - text_width2 // 2
-
-        total_text_height = text_height1 + text_height2 + 10
-        center_y = (rect_y1 + rect_y2) // 2
-        text_y1 = center_y - total_text_height // 2 + text_height1
-        text_y2 = text_y1 + 10 + text_height2
 
         cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
         cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
