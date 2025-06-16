@@ -87,11 +87,6 @@ class TeamBallControlDrawer:
         rect_y1 = int(frame_height * 0.75)
         rect_x2 = int(frame_width * 0.99)  
         rect_y2 = int(frame_height * 0.90)
-        # Text positions
-        text_x = int(frame_width * 0.63)  
-        text_y1 = int(frame_height * 0.80)  
-        text_y2 = int(frame_height * 0.88)
-
 
         radius = 20
         cv2.rectangle(overlay, (rect_x1 + radius, rect_y1), (rect_x2 - radius, rect_y2), (255, 255, 255), -1)
@@ -110,7 +105,22 @@ class TeamBallControlDrawer:
         team_1 = team_1_num_frames/(team_ball_control_till_frame.shape[0])
         team_2 = team_2_num_frames/(team_ball_control_till_frame.shape[0])
 
-        cv2.putText(frame, f"Team 1 Ball Control: {team_1*100:.2f}%",(text_x, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
-        cv2.putText(frame, f"Team 2 Ball Control: {team_2*100:.2f}%",(text_x, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
+        text1 = f"Team 1 Ball Control: {team_1*100:.2f}%"
+        text2 = f"Team 2 Ball Control: {team_2*100:.2f}%"
+
+        (text_width1, text_height1), _ = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
+        (text_width2, text_height2), _ = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
+
+        center_x = (rect_x1 + rect_x2) // 2
+        text_x1 = center_x - text_width1 // 2
+        text_x2 = center_x - text_width2 // 2
+
+        total_text_height = text_height1 + text_height2 + 10
+        center_y = (rect_y1 + rect_y2) // 2
+        text_y1 = center_y - total_text_height // 2 + text_height1
+        text_y2 = text_y1 + 10 + text_height2
+
+        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
+        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
 
         return frame

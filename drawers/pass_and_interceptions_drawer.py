@@ -89,10 +89,6 @@ class PassInterceptionDrawer:
         rect_y1 = int(frame_height * 0.75)
         rect_x2 = int(frame_width * 0.55)  
         rect_y2 = int(frame_height * 0.90)
-        # Text positions
-        text_x = int(frame_width * 0.19)  
-        text_y1 = int(frame_height * 0.80)  
-        text_y2 = int(frame_height * 0.88)
 
         radius = 20
         cv2.rectangle(overlay, (rect_x1 + radius, rect_y1), (rect_x2 - radius, rect_y2), (255, 255, 255), -1)
@@ -105,33 +101,32 @@ class PassInterceptionDrawer:
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
         # Get stats until current frame
-        passes_till_frame = passes[:frame_num+1]
-        interceptions_till_frame = interceptions[:frame_num+1]
-        
+        passes_till_frame = passes[:frame_num + 1]
+        interceptions_till_frame = interceptions[:frame_num + 1]
+
         team1_passes, team2_passes, team1_interceptions, team2_interceptions = self.get_stats(
-            passes_till_frame, 
+            passes_till_frame,
             interceptions_till_frame
         )
 
-        cv2.putText(
-            frame, 
-            f"Team 1 - Passes: {team1_passes} Interceptions: {team1_interceptions}",
-            (text_x, text_y1), 
-            cv2.FONT_HERSHEY_SIMPLEX, 
-            font_scale, 
-            (0,0,0), 
-            font_thickness
-        )
-        
-        cv2.putText(
-            frame, 
-            f"Team 2 - Passes: {team2_passes} Interceptions: {team2_interceptions}",
-            (text_x, text_y2), 
-            cv2.FONT_HERSHEY_SIMPLEX, 
-            font_scale, 
-            (0,0,0), 
-            font_thickness
-        )
+        text1 = f"Team 1 - Passes: {team1_passes} Interceptions: {team1_interceptions}"
+        text2 = f"Team 2 - Passes: {team2_passes} Interceptions: {team2_interceptions}"
 
+        text1_size = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)[0]
+        text2_size = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)[0]
+
+        center_x = (rect_x1 + rect_x2) // 2
+        center_y = (rect_y1 + rect_y2) // 2
+
+        # Place two lines of text centered vertically
+        spacing = 10
+        text_y1 = center_y - spacing
+        text_y2 = center_y + text2_size[1] + spacing
+
+        text_x1 = center_x - text1_size[0] // 2
+        text_x2 = center_x - text2_size[0] // 2
+
+        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
+        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
 
         return frame
