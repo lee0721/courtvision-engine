@@ -156,8 +156,8 @@ def main():
     ## Draw Tactical View
     output_video_frames = tactical_view_drawer.draw(output_video_frames,
                                                     tactical_view_converter.court_image_path,
-                                                    500,
-                                                    350,
+                                                    tactical_view_converter.width,
+                                                    tactical_view_converter.height,
                                                     tactical_view_converter.key_points,
                                                     tactical_player_positions,
                                                     player_assignment,
