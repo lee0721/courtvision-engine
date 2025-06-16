@@ -70,25 +70,23 @@ class PassInterceptionDrawer:
         frame_height, frame_width = frame.shape[:2]
         rect_width = int(frame_width * 0.30)
         rect_height = int(frame_height * 0.10)
+        margin = 30
 
-        rect_x2 = frame_width - 20
-        rect_y2 = frame_height - 20
+        rect_x2 = frame_width - margin
+        rect_y2 = frame_height - margin
         rect_x1 = rect_x2 - rect_width
         rect_y1 = rect_y2 - rect_height
 
-        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2),
-                            radius=20, color=(255, 255, 255), alpha=0.6)
+        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), radius=20, color=(255, 255, 255), alpha=0.6)
 
-        # ✨ 自動根據 box 高度調整文字大小
-        font_scale = rect_height / 150  # 控制縮放比例（數字越小字越大）
+        font_scale = rect_height / 150
         font_thickness = max(1, int(font_scale * 2))
 
         passes_till_frame = passes[:frame_num + 1]
         interceptions_till_frame = interceptions[:frame_num + 1]
 
         team1_passes, team2_passes, team1_interceptions, team2_interceptions = self.get_stats(
-            passes_till_frame,
-            interceptions_till_frame
+            passes_till_frame, interceptions_till_frame
         )
 
         text1 = f"Team 1 - Passes: {team1_passes} Interceptions: {team1_interceptions}"
