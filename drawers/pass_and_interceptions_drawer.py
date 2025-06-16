@@ -71,8 +71,8 @@ class PassInterceptionDrawer:
         font_thickness = 2
 
         frame_height, frame_width = frame.shape[:2]
-        rect_width = int(frame_width * 0.38)
-        rect_height = int(frame_height * 0.12)
+        rect_width = int(frame_width * 0.30)
+        rect_height = int(frame_height * 0.10)
 
         rect_x2 = frame_width - 20
         rect_y2 = frame_height - 20

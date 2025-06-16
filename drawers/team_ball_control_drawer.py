@@ -81,8 +81,8 @@ class TeamBallControlDrawer:
 
         # Overlay Position - smaller and centered lower right
         frame_height, frame_width = frame.shape[:2]
-        box_width = int(frame_width * 0.35)
-        box_height = int(frame_height * 0.13)
+        box_width = int(frame_width * 0.30)
+        box_height = int(frame_height * 0.10)
         margin = 30
 
         rect_x2 = frame_width - margin
