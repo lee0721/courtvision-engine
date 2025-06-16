@@ -66,7 +66,7 @@ class TeamBallControlDrawer:
     
     def draw_frame(self, frame, frame_num, team_ball_control):
         frame_height, frame_width = frame.shape[:2]
-        box_width = int(frame_width * 0.30)
+        box_width = int(frame_width * 0.20)
         box_height = int(frame_height * 0.10)
         margin = 30
 
