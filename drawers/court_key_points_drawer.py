@@ -22,11 +22,11 @@ class CourtKeypointDrawer:
         Returns:
             list: A list of frames with keypoints drawn on them.
         """
-        """
+        
         vertex_annotator = sv.VertexAnnotator(
             color=sv.Color.from_hex(self.keypoint_color),
-            radius=25)
-        """
+            radius=23)
+        
         vertex_label_annotator = sv.VertexLabelAnnotator(
             color=sv.Color.from_hex(self.keypoint_color),
             text_color=sv.Color.WHITE,
@@ -40,11 +40,9 @@ class CourtKeypointDrawer:
 
             keypoints = court_keypoints[index]
             # Draw dots
-            """
             annotated_frame = vertex_annotator.annotate(
                 scene=annotated_frame,
                 key_points=keypoints)
-            """
             # Draw labels
             # Convert PyTorch tensor to numpy array
             keypoints_numpy = keypoints.cpu().numpy()
