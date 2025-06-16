@@ -67,9 +67,6 @@ class PassInterceptionDrawer:
         return output_video_frames
     
     def draw_frame(self, frame, frame_num, passes, interceptions):
-        font_scale = 0.7
-        font_thickness = 2
-
         frame_height, frame_width = frame.shape[:2]
         rect_width = int(frame_width * 0.30)
         rect_height = int(frame_height * 0.10)
@@ -79,7 +76,12 @@ class PassInterceptionDrawer:
         rect_x1 = rect_x2 - rect_width
         rect_y1 = rect_y2 - rect_height
 
-        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), 20, (255, 255, 255), alpha=0.6)
+        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2),
+                            radius=20, color=(255, 255, 255), alpha=0.6)
+
+        # ✨ 自動根據 box 高度調整文字大小
+        font_scale = rect_height / 60.0  # 控制縮放比例（數字越小字越大）
+        font_thickness = max(1, int(font_scale * 2))
 
         passes_till_frame = passes[:frame_num + 1]
         interceptions_till_frame = interceptions[:frame_num + 1]
@@ -97,15 +99,17 @@ class PassInterceptionDrawer:
 
         center_x = (rect_x1 + rect_x2) // 2
         center_y = (rect_y1 + rect_y2) // 2
-
         spacing = 10
+
         text_y1 = center_y - spacing
         text_y2 = center_y + text2_size[1] + spacing
 
         text_x1 = center_x - text1_size[0] // 2
         text_x2 = center_x - text2_size[0] // 2
 
-        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
-        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
+        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale, (0, 0, 0), font_thickness)
+        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale, (0, 0, 0), font_thickness)
 
         return frame

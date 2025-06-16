@@ -64,21 +64,10 @@ class TeamBallControlDrawer:
             output_video_frames.append(frame_drawn)
         return output_video_frames
     
-    def draw_frame(self,frame,frame_num,team_ball_control):
+    def draw_frame(self, frame, frame_num, team_ball_control):
         """
         Draw a semi-transparent overlay of team ball control percentages on a single frame.
-
-        Args:
-            frame (numpy.ndarray): The current video frame on which the overlay will be drawn.
-            frame_num (int): The index of the current frame.
-            team_ball_control (numpy.ndarray): An array indicating which team has ball control for each frame.
-
-        Returns:
-            numpy.ndarray: The frame with the semi-transparent overlay and statistics.
         """
-        font_scale = 0.7
-        font_thickness=2
-
         # Overlay Position - smaller and centered lower right
         frame_height, frame_width = frame.shape[:2]
         box_width = int(frame_width * 0.30)
@@ -90,16 +79,24 @@ class TeamBallControlDrawer:
         rect_y2 = frame_height - margin
         rect_y1 = rect_y2 - box_height
 
-        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), radius=20, color=(255, 255, 255), alpha=0.6)
+        # ✨ 自動根據 box 高度調整文字大小
+        font_scale = box_height / 60  # 可調參數（越小字越大）
+        font_thickness = max(1, int(font_scale * 2))
 
-        team_ball_control_till_frame = team_ball_control[:frame_num+1]
-        team_1_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==1].shape[0]
-        team_2_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==2].shape[0]
-        team_1 = team_1_num_frames/(team_ball_control_till_frame.shape[0])
-        team_2 = team_2_num_frames/(team_ball_control_till_frame.shape[0])
+        # 繪製圓角框
+        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2),
+                            radius=20, color=(255, 255, 255), alpha=0.6)
 
-        text1 = f"Team 1 Ball Control: {team_1*100:.2f}%"
-        text2 = f"Team 2 Ball Control: {team_2*100:.2f}%"
+        # 計算控球時間百分比
+        team_ball_control_till_frame = team_ball_control[:frame_num + 1]
+        team_1_num_frames = np.sum(team_ball_control_till_frame == 1)
+        team_2_num_frames = np.sum(team_ball_control_till_frame == 2)
+        total_frames = len(team_ball_control_till_frame)
+        team_1 = team_1_num_frames / total_frames
+        team_2 = team_2_num_frames / total_frames
+
+        text1 = f"Team 1 Ball Control: {team_1 * 100:.2f}%"
+        text2 = f"Team 2 Ball Control: {team_2 * 100:.2f}%"
 
         (text_width1, text_height1), _ = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
         (text_width2, text_height2), _ = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
@@ -114,7 +111,9 @@ class TeamBallControlDrawer:
         text_x1 = center_x - text_width1 // 2
         text_x2 = center_x - text_width2 // 2
 
-        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
-        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), font_thickness)
+        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale, (0, 0, 0), font_thickness)
+        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale, (0, 0, 0), font_thickness)
 
         return frame
