@@ -80,7 +80,7 @@ class PassInterceptionDrawer:
                             radius=20, color=(255, 255, 255), alpha=0.6)
 
         # ✨ 自動根據 box 高度調整文字大小
-        font_scale = rect_height / 60.0  # 控制縮放比例（數字越小字越大）
+        font_scale = rect_height / 100  # 控制縮放比例（數字越小字越大）
         font_thickness = max(1, int(font_scale * 2))
 
         passes_till_frame = passes[:frame_num + 1]

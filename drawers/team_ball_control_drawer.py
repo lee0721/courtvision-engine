@@ -80,7 +80,7 @@ class TeamBallControlDrawer:
         rect_y1 = rect_y2 - box_height
 
         # ✨ 自動根據 box 高度調整文字大小
-        font_scale = box_height / 60  # 可調參數（越小字越大）
+        font_scale = box_height / 100  # 可調參數（越小字越大）
         font_thickness = max(1, int(font_scale * 2))
 
         # 繪製圓角框
