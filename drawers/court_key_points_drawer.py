@@ -14,7 +14,7 @@ class CourtKeypointDrawer:
 
     def draw(self, frames, court_keypoints):
         """
-        Draws court keypoint labels (numbers) on a given list of frames, without drawing dots or rectangles.
+        Draws court keypoints (dots and labels without rectangular background) on a given list of frames.
 
         Args:
             frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
@@ -22,10 +22,14 @@ class CourtKeypointDrawer:
                 the (x, y) coordinates of court keypoints for that frame.
 
         Returns:
-            list: A list of frames with keypoint labels drawn on them.
+            list: A list of frames with keypoints drawn on them.
         """
-        vertex_label_annotator = sv.VertexLabelAnnotator(
+        vertex_annotator = sv.VertexAnnotator(
             color=sv.Color.from_hex(self.keypoint_color),
+            radius=8)
+        
+        vertex_label_annotator = sv.VertexLabelAnnotator(
+            color=sv.Color(0, 0, 0, alpha=0),  # Transparent background to remove rectangle
             text_color=sv.Color.WHITE,
             text_scale=0.5,
             text_thickness=1
@@ -36,9 +40,13 @@ class CourtKeypointDrawer:
             annotated_frame = frame.copy()
 
             keypoints = court_keypoints[index]
-            # Convert PyTorch tensor to numpy array for VertexLabelAnnotator
+            # Draw dots
+            annotated_frame = vertex_annotator.annotate(
+                scene=annotated_frame,
+                key_points=keypoints)
+            # Draw labels (numbers without background)
+            # Convert PyTorch tensor to numpy array
             keypoints_numpy = keypoints.cpu().numpy() if isinstance(keypoints, torch.Tensor) else keypoints
-            # Draw only labels (numbers)
             annotated_frame = vertex_label_annotator.annotate(
                 scene=annotated_frame,
                 key_points=keypoints_numpy)
