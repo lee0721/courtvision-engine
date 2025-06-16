@@ -33,6 +33,13 @@ class TacticalViewDrawer:
         Returns:
             list: List of frames with tactical view drawn on them.
         """
+        frame_height, frame_width = video_frames[0].shape[:2]
+        # 限制不要超出 frame 尺寸範圍
+        max_width = frame_width - self.start_x
+        max_height = frame_height - self.start_y
+        width = min(width, max_width)
+        height = min(height, max_height)
+        
         court_image = cv2.imread(court_image_path)
         court_image = cv2.resize(court_image, (width, height))
 
