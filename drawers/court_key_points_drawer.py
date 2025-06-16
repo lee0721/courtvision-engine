@@ -12,7 +12,7 @@ class CourtKeypointDrawer:
 
     def draw(self, frames, court_keypoints):
         """
-        Draws court keypoints as circles on a given list of frames.
+        Draws court keypoints on a given list of frames.
 
         Args:
             frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
@@ -22,18 +22,32 @@ class CourtKeypointDrawer:
         Returns:
             list: A list of frames with keypoints drawn on them.
         """
+        vertex_annotator = sv.VertexAnnotator(
+            color=sv.Color.from_hex(self.keypoint_color),
+            radius=8, style=sv.VertexStyle.CIRCLE)
+        
+        vertex_label_annotator = sv.VertexLabelAnnotator(
+            color=sv.Color.from_hex(self.keypoint_color),
+            text_color=sv.Color.WHITE,
+            text_scale=0.5,
+            text_thickness=1
+        )
+        
         output_frames = []
-        for index, frame in enumerate(frames):
+        for index,frame in enumerate(frames):
             annotated_frame = frame.copy()
+
             keypoints = court_keypoints[index]
-
-            keypoints_numpy = keypoints.cpu().numpy()  # Convert tensor to numpy
-
-            for idx, (x, y) in enumerate(keypoints_numpy):
-                x, y = int(x), int(y)
-                cv2.circle(annotated_frame, (x, y), self.radius, self.color, -1)
-                cv2.putText(annotated_frame, str(idx), (x + 5, y - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.label_color, 1)
+            # Draw dots
+            annotated_frame = vertex_annotator.annotate(
+                scene=annotated_frame,
+                key_points=keypoints)
+            # Draw labels
+            # Convert PyTorch tensor to numpy array
+            keypoints_numpy = keypoints.cpu().numpy()
+            annotated_frame = vertex_label_annotator.annotate(
+                scene=annotated_frame,
+                key_points=keypoints_numpy)
 
             output_frames.append(annotated_frame)
 
