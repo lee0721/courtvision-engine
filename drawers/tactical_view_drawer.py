@@ -55,7 +55,7 @@ class TacticalViewDrawer:
                 x += self.start_x
                 y += self.start_y
                 cv2.circle(frame, (x, y), 5, (0, 252, 21)[::-1], -1)
-                cv2.putText(frame, str(keypoint_index), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255)[::-1], 2)
+                cv2.putText(frame, str(keypoint_index), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0)[::-1], 2)
             
             # Draw player positions in tactical view if available
             if tactical_player_positions and player_assignment and frame_idx < len(tactical_player_positions):
