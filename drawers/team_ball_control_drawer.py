@@ -1,4 +1,4 @@
-from utils import draw_rounded_rectangle
+from .utils import draw_rounded_rectangle
 import cv2 
 import numpy as np
 
