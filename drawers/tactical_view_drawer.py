@@ -68,7 +68,7 @@ class TacticalViewDrawer:
                     team_id = frame_assignments.get(player_id, 1)  # Default to team 1 if not assigned
                     
                     # Set color based on team
-                    color = self.team_1_color if team_id == 1 else self.team_2_color
+                    color = self.team_1_color[::-1]  if team_id == 1 else self.team_2_color[::-1] 
                     
                     # Adjust position to overlay coordinates
                     x, y = int(position[0]) + self.start_x, int(position[1]) + self.start_y
