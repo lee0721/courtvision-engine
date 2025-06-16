@@ -1,7 +1,4 @@
 import supervision as sv
-import numpy as np
-import torch
-import cv2
 
 class CourtKeypointDrawer:
     """
@@ -15,7 +12,7 @@ class CourtKeypointDrawer:
 
     def draw(self, frames, court_keypoints):
         """
-        Draws court keypoints (dots and labels without rectangular background) on a given list of frames.
+        Draws court keypoints on a given list of frames.
 
         Args:
             frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
@@ -27,31 +24,30 @@ class CourtKeypointDrawer:
         """
         vertex_annotator = sv.VertexAnnotator(
             color=sv.Color.from_hex(self.keypoint_color),
-            radius=8)
+            radius=10)
+        
+        vertex_label_annotator = sv.VertexLabelAnnotator(
+            color=sv.Color.from_hex(self.keypoint_color),
+            text_color=sv.Color.WHITE,
+            text_scale=0.5,
+            text_thickness=1
+        )
         
         output_frames = []
-        for index, frame in enumerate(frames):
+        for index,frame in enumerate(frames):
             annotated_frame = frame.copy()
 
             keypoints = court_keypoints[index]
-            # Draw red dots
+            # Draw dots
             annotated_frame = vertex_annotator.annotate(
                 scene=annotated_frame,
                 key_points=keypoints)
-            
-            # Convert PyTorch tensor to numpy array for label drawing
-            keypoints_numpy = keypoints.cpu().numpy() if isinstance(keypoints, torch.Tensor) else keypoints
-            # Draw white number labels without background using OpenCV
-            for i, (x, y) in enumerate(keypoints_numpy[:, :2]):
-                cv2.putText(
-                    annotated_frame,
-                    str(i),
-                    (int(x), int(y) - 10),  # Slightly above the keypoint
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,  # Text scale
-                    (255, 255, 255),  # White color
-                    1  # Text thickness
-                )
+            # Draw labels
+            # Convert PyTorch tensor to numpy array
+            keypoints_numpy = keypoints.cpu().numpy()
+            annotated_frame = vertex_label_annotator.annotate(
+                scene=annotated_frame,
+                key_points=keypoints_numpy)
 
             output_frames.append(annotated_frame)
 
