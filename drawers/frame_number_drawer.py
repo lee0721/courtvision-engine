@@ -19,8 +19,8 @@ class FrameNumberDrawer:
 
             # 畫白底黑字的框框
             text_size = cv2.getTextSize(time_text, cv2.FONT_HERSHEY_DUPLEX, 1, 2)[0]
-            text_x = 10
-            text_y = frame.shape[0] - 10
+            text_x = 50
+            text_y = frame.shape[0] - 50
             cv2.rectangle(frame, (text_x - 5, text_y - text_size[1] - 5),
                           (text_x + text_size[0] + 5, text_y + 5), (255, 255, 255), -1)
             cv2.putText(frame, time_text, (text_x, text_y),
