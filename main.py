@@ -1,5 +1,6 @@
 import os
 import argparse
+import torch
 from utils import read_video, save_video
 from trackers import DeepSortPlayerTracker, BallTracker
 from team_assigner import TeamAssigner
@@ -8,6 +9,7 @@ from ball_aquisition import BallAquisitionDetector
 from pass_and_interception_detector import PassAndInterceptionDetector
 from tactical_view_converter import TacticalViewConverter
 from speed_and_distance_calculator import SpeedAndDistanceCalculator
+from action_recognition import load_model, predict_action
 from drawers import (
     PlayerTracksDrawer, 
     BallTracksDrawer,
@@ -16,14 +18,16 @@ from drawers import (
     FrameNumberDrawer,
     PassInterceptionDrawer,
     TacticalViewDrawer,
-    SpeedAndDistanceDrawer
+    SpeedAndDistanceDrawer,
+    ActionRecognitionDrawer 
 )
 from configs import(
     STUBS_DEFAULT_PATH,
     PLAYER_DETECTOR_PATH,
     BALL_DETECTOR_PATH,
     COURT_KEYPOINT_DETECTOR_PATH,
-    OUTPUT_VIDEO_PATH
+    OUTPUT_VIDEO_PATH,
+    ACTION_RECOGNITION_MODEL_PATH
 )
 
 def parse_args():
@@ -104,6 +108,10 @@ def main():
     )
     player_distances_per_frame = speed_and_distance_calculator.calculate_distance(tactical_player_positions)
     player_speed_per_frame = speed_and_distance_calculator.calculate_speed(player_distances_per_frame)
+    
+    # ====== 動作辨識 ======
+    action_model = load_model(ACTION_RECOGNITION_MODEL_PATH)  # 載入動作辨識模型
+    action_predictions = predict_action(video_frames, action_model)  # 預測動作
 
     # Draw output   
     # Initialize Drawers
@@ -164,6 +172,10 @@ def main():
                                                     ball_aquisition,
                                                     )
 
+    # ====== 動作辨識結果繪製 ======
+    action_recognition_drawer = ActionRecognitionDrawer(action_predictions)
+    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks)  # 繪製動作辨識結果
+    
     # Save video
     save_video(output_video_frames, args.output_video)
 
