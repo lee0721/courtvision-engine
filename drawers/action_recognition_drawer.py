@@ -2,46 +2,46 @@ import cv2
 
 class ActionRecognitionDrawer():
     """
-    負責將動作辨識結果畫到每一幀上
+    Responsible for drawing action recognition results on each frame.
     """
     def __init__(self, action_predictions):
         """
-        初始化 ActionRecognitionDrawer
+        Initialize ActionRecognitionDrawer
         
         Args:
-            action_predictions (dict): 預測的動作標籤字典，格式為 {frame_index: action_label}
+            action_predictions (dict): Dictionary of predicted actions {frame_index: action_label}
         """
-        self.action_predictions = action_predictions  # 動作預測結果字典
+        self.action_predictions = action_predictions  # Store action predictions
 
     def draw(self, video_frames, player_tracks):
         """
-        在每一幀上畫出動作標籤
+        Draw action labels on each frame.
 
         Args:
-            video_frames (list): 每一幀的影像
-            player_tracks (dict): 每一幀的球員追蹤資料，格式為 {frame_index: {player_id: {'bbox': (x1, y1, x2, y2)}}}
+            video_frames (list): List of frames (images).
+            player_tracks (dict): Player tracking data for each frame, formatted as {frame_index: {player_id: {'bbox': (x1, y1, x2, y2)}}}
         
         Returns:
-            list: 輸出帶有動作標籤的影片幀
+            list: Output video frames with action labels drawn.
         """
         output_video_frames = []
 
         for frame_idx, frame in enumerate(video_frames):
             output_frame = frame.copy()
 
-            # 獲取當前幀的動作標籤
+            # Get the action label for the current frame
             action = self.action_predictions.get(frame_idx, None)
 
-            # 如果有動作標籤，將其繪製到框框旁邊
+            # If an action label exists, draw it next to the player's bounding box
             if action is not None:
-                # 設定顯示位置（例如：框的旁邊）
+                # Draw action label next to each player in the frame
                 for player_id, player_data in player_tracks.get(frame_idx, {}).items():
                     bbox = player_data['bbox']
                     x1, y1, x2, y2 = bbox
                     position = [int((x1 + x2) / 2), int(y2)]
-                    position[1] += 40  # 將位置稍微移動以顯示動作標籤
+                    position[1] += 40  # Slightly offset position to display action label
                     
-                    # 顯示動作標籤
+                    # Display the action label on the frame
                     cv2.putText(output_frame, f"Action: {action}", (position[0], position[1]), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 

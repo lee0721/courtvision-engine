@@ -9,7 +9,7 @@ from ball_aquisition import BallAquisitionDetector
 from pass_and_interception_detector import PassAndInterceptionDetector
 from tactical_view_converter import TacticalViewConverter
 from speed_and_distance_calculator import SpeedAndDistanceCalculator
-from action_recognition import load_model, predict_action
+from action_recognition import ActionRecognitionModel
 from drawers import (
     PlayerTracksDrawer, 
     BallTracksDrawer,
@@ -110,8 +110,8 @@ def main():
     player_speed_per_frame = speed_and_distance_calculator.calculate_speed(player_distances_per_frame)
     
     # ====== 動作辨識 ======
-    action_model = load_model(ACTION_RECOGNITION_MODEL_PATH)  # 載入動作辨識模型
-    action_predictions = predict_action(video_frames, action_model)  # 預測動作
+    action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH)  # Initialize action recognition model
+    action_predictions = action_recognition_model.predict(video_frames)  # Get predictions
 
     # Draw output   
     # Initialize Drawers
@@ -174,7 +174,7 @@ def main():
 
     # ====== 動作辨識結果繪製 ======
     action_recognition_drawer = ActionRecognitionDrawer(action_predictions)
-    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks)  # 繪製動作辨識結果
+    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks)  # Draw action recognition results
     
     # Save video
     save_video(output_video_frames, args.output_video)
