@@ -2,6 +2,7 @@ import torch
 import cv2
 import numpy as np
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
+from utils import read_stub, save_stub
 
 class ActionRecognitionModel:
     """
@@ -18,16 +19,25 @@ class ActionRecognitionModel:
         self.model = torch.load(model_path)  # Load the pre-trained model
         self.model.eval()  # Set the model to evaluation mode
 
-    def predict(self, video_frames):
+    def predict(self, video_frames, read_from_stub=False, stub_path=None):
         """
         Perform action recognition on a list of video frames.
         
         Args:
             video_frames (list): A list of video frames (numpy.ndarray format).
+            read_from_stub (bool, optional): If True, reads predictions from the stub file.
+            stub_path (str, optional): Path to the stub file. If None, a default path may be used.
         
         Returns:
             dict: A dictionary of action predictions for each frame in the video.
         """
+        actions = read_stub(read_from_stub, stub_path)
+        
+        if actions is not None:
+            # If predictions are already cached in the stub, return them
+            if len(actions) == len(video_frames):
+                return actions
+        
         actions = {}
         
         transform = Compose([
@@ -47,5 +57,8 @@ class ActionRecognitionModel:
                 prediction = torch.argmax(output, dim=1).item()  # Get the predicted action class
             
             actions[frame_idx] = prediction
+        
+        # Save the predictions as a stub
+        save_stub(stub_path, actions)
         
         return actions

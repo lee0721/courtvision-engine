@@ -9,7 +9,7 @@ from ball_aquisition import BallAquisitionDetector
 from pass_and_interception_detector import PassAndInterceptionDetector
 from tactical_view_converter import TacticalViewConverter
 from speed_and_distance_calculator import SpeedAndDistanceCalculator
-from action_recognition import ActionRecognitionModel
+from action_recognition import ActionRecognitionModel 
 from drawers import (
     PlayerTracksDrawer, 
     BallTracksDrawer,
@@ -52,7 +52,7 @@ def main():
     ## Initialize Keypoint Detector
     court_keypoint_detector = CourtKeypointDetector(COURT_KEYPOINT_DETECTOR_PATH)
 
-    # Initialize action recognition model
+    # Initialize Action Recognition Model
     action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH) 
 
     # Run Detectors
@@ -113,8 +113,9 @@ def main():
     player_speed_per_frame = speed_and_distance_calculator.calculate_speed(player_distances_per_frame)
     
     # Run Action Recognition
-    action_predictions = action_recognition_model.predict(video_frames)  # Get predictions
-
+    action_predictions = action_recognition_model.predict(video_frames, read_from_stub=True, 
+                                                           stub_path=os.path.join(args.stub_path, 'action_recognition_predictions.pkl'))
+    
     # Draw output   
     # Initialize Drawers
     # 改成這樣，把 team_assigner 偵測的顏色直接傳進去
@@ -132,8 +133,10 @@ def main():
         team_2_color=team_assigner.team_2_color_rgb
     )
     speed_and_distance_drawer = SpeedAndDistanceDrawer()
+    # Initialize ActionRecognitionDrawer and set predictions
     action_recognition_drawer = ActionRecognitionDrawer()
-
+    action_recognition_drawer.set_predictions(action_predictions)  # Set predictions here
+    
     ## Draw object Tracks
     output_video_frames = player_tracks_drawer.draw(video_frames, 
                                                     player_tracks,

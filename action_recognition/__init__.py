@@ -1,1 +1,1 @@
-from .action_recognition import *
+from .action_recognition import ActionRecognitionModel
