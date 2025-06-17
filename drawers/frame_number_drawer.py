@@ -1,6 +1,6 @@
 import cv2
 
-class FrameTimerDrawer:
+class FrameNumberDrawer:
     def __init__(self, fps=30):
         self.fps = fps  # 每秒影格數
 
