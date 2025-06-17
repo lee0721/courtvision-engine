@@ -52,6 +52,9 @@ def main():
     ## Initialize Keypoint Detector
     court_keypoint_detector = CourtKeypointDetector(COURT_KEYPOINT_DETECTOR_PATH)
 
+    # Initialize action recognition model
+    action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH) 
+
     # Run Detectors
     player_tracks = player_tracker.get_object_tracks(video_frames,
                                        read_from_stub=True,
@@ -109,8 +112,7 @@ def main():
     player_distances_per_frame = speed_and_distance_calculator.calculate_distance(tactical_player_positions)
     player_speed_per_frame = speed_and_distance_calculator.calculate_speed(player_distances_per_frame)
     
-    # ====== 動作辨識 ======
-    action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH)  # Initialize action recognition model
+    # Run Action Recognition
     action_predictions = action_recognition_model.predict(video_frames)  # Get predictions
 
     # Draw output   
@@ -130,6 +132,7 @@ def main():
         team_2_color=team_assigner.team_2_color_rgb
     )
     speed_and_distance_drawer = SpeedAndDistanceDrawer()
+    action_recognition_drawer = ActionRecognitionDrawer()
 
     ## Draw object Tracks
     output_video_frames = player_tracks_drawer.draw(video_frames, 
@@ -172,9 +175,8 @@ def main():
                                                     ball_aquisition,
                                                     )
 
-    # ====== 動作辨識結果繪製 ======
-    action_recognition_drawer = ActionRecognitionDrawer(action_predictions)
-    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks)  # Draw action recognition results
+    # Draw action recognition results
+    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
     
     # Save video
     save_video(output_video_frames, args.output_video)
