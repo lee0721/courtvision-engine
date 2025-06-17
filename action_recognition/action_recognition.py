@@ -18,6 +18,9 @@ class ActionRecognitionModel:
         """
         # Define the model architecture
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
+        # 修改最後一層的輸出為 10 類別
+        model.fc = torch.nn.Linear(model.fc.in_features, 10)
+        
         # Load the model state dict (weights)
         state_dict = torch.load(model_path)
         model.load_state_dict(state_dict)
