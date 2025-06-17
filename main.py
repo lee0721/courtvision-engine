@@ -1,7 +1,7 @@
 import os
 import argparse
 from utils import read_video, save_video
-from trackers import PlayerTracker, BallTracker
+from trackers import DeepSortPlayerTracker, BallTracker
 from team_assigner import TeamAssigner
 from court_keypoint_detector import CourtKeypointDetector
 from ball_aquisition import BallAquisitionDetector
@@ -42,7 +42,7 @@ def main():
     video_frames = read_video(args.input_video)
     
     ## Initialize Tracker
-    player_tracker = PlayerTracker(PLAYER_DETECTOR_PATH)
+    player_tracker = DeepSortPlayerTracker(PLAYER_DETECTOR_PATH)
     ball_tracker = BallTracker(BALL_DETECTOR_PATH)
 
     ## Initialize Keypoint Detector
@@ -51,7 +51,7 @@ def main():
     # Run Detectors
     player_tracks = player_tracker.get_object_tracks(video_frames,
                                        read_from_stub=True,
-                                       stub_path=os.path.join(args.stub_path, 'player_track_stubs.pkl')
+                                       stub_path=os.path.join(args.stub_path, 'deepsort_player_track_stubs.pkl')
                                       )
     
     ball_tracks = ball_tracker.get_object_tracks(video_frames,

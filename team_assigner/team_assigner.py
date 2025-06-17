@@ -56,7 +56,7 @@ class TeamAssigner:
         self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
         self.processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
 
-    def get_player_color(self,frame,bbox):
+    def get_player_color(self, frame, bbox):
         """
         Analyzes the jersey color of a player within the given bounding box.
 
@@ -67,9 +67,20 @@ class TeamAssigner:
         Returns:
             str: The classified jersey color/description.
         """
-        image = frame[int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])]
+        h, w, _ = frame.shape
+        x1 = max(0, int(bbox[0]))
+        y1 = max(0, int(bbox[1]))
+        x2 = min(w, int(bbox[2]))
+        y2 = min(h, int(bbox[3]))
 
-        # Convert to PIL Image
+        if x2 <= x1 or y2 <= y1:
+            return self.team_2_class_name  # fallback default
+
+        image = frame[y1:y2, x1:x2]
+
+        if image is None or image.size == 0:
+            return self.team_2_class_name  # fallback default
+
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         pil_image = Image.fromarray(rgb_image)
         image = pil_image
@@ -77,14 +88,11 @@ class TeamAssigner:
         classes = [self.team_1_class_name, self.team_2_class_name]
 
         inputs = self.processor(text=classes, images=image, return_tensors="pt", padding=True)
-
         outputs = self.model(**inputs)
         logits_per_image = outputs.logits_per_image
-        probs = logits_per_image.softmax(dim=1) 
+        probs = logits_per_image.softmax(dim=1)
 
-
-        class_name=  classes[probs.argmax(dim=1)[0]]
-
+        class_name = classes[probs.argmax(dim=1)[0]]
         return class_name
 
     def get_player_team(self,frame,player_bbox,player_id):
