@@ -13,9 +13,9 @@ class FrameNumberDrawer:
             total_seconds = i / self.fps
             minutes = int(total_seconds // 60)
             seconds = int(total_seconds % 60)
-            milliseconds = int((total_seconds - int(total_seconds)) * 10)  # 顯示1位小數，例如0.1秒
+            milliseconds = int((total_seconds - int(total_seconds)) * 100)  # 兩位小數（百分之一秒）
 
-            time_text = f"{minutes:02}:{seconds:02}.{milliseconds}"
+            timer_text = f"{minutes:02d}:{seconds:02d}.{milliseconds:02d}"
 
             # 畫白底黑字的框框
             text_size = cv2.getTextSize(time_text, cv2.FONT_HERSHEY_DUPLEX, 1, 2)[0]
