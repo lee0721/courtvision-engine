@@ -1,6 +1,7 @@
 import torch
 import cv2
 import numpy as np
+from utils.stubs_utils import read_stub
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 
