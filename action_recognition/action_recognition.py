@@ -2,7 +2,7 @@ import torch
 import cv2
 import numpy as np
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
-from utils import read_stub, save_stub
+from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 
 class ActionRecognitionModel:
     """
@@ -16,8 +16,13 @@ class ActionRecognitionModel:
         Args:
             model_path (str): Path to the pre-trained model.
         """
-        self.model = torch.load(model_path)  # Load the pre-trained model
-        self.model.eval()  # Set the model to evaluation mode
+        # Define the model architecture
+        model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
+        # Load the model state dict (weights)
+        state_dict = torch.load(model_path)
+        model.load_state_dict(state_dict)
+        
+        self.model = model.eval()  # Set the model to evaluation mode
 
     def predict(self, video_frames, read_from_stub=False, stub_path=None):
         """
