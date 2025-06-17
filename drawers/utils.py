@@ -80,7 +80,7 @@ def draw_ellipse(frame,bbox,color,track_id=None):
                         cv2.FILLED)
         
         x1_text = x1_rect+12
-        if track_id > 99:
+        if int(track_id) > 99:
             x1_text -=10
         
         cv2.putText(
