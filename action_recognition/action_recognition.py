@@ -63,7 +63,7 @@ class ActionRecognitionModel:
             # Convert numpy array (BGR) to PIL Image
             frame_pil = Image.fromarray(frame_rgb)
             
-            # Apply transformations
+            # Apply transformations to ensure we have 3 channels (RGB)
             frame_tensor = transform(frame_pil).unsqueeze(0)  # Add batch dimension
             
             # Perform action prediction
