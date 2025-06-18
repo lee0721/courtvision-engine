@@ -9,7 +9,7 @@ from ball_aquisition import BallAquisitionDetector
 from pass_and_interception_detector import PassAndInterceptionDetector
 from tactical_view_converter import TacticalViewConverter
 from speed_and_distance_calculator import SpeedAndDistanceCalculator
-from action_recognition import ActionRecognitionModel
+from action_recognition import ActionRecognitionModel 
 from drawers import (
     PlayerTracksDrawer, 
     BallTracksDrawer,
@@ -53,7 +53,7 @@ def main():
     court_keypoint_detector = CourtKeypointDetector(COURT_KEYPOINT_DETECTOR_PATH)
 
     # Initialize Action Recognition Model
-    action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH)
+    action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH) 
 
     # Run Detectors
     player_tracks = player_tracker.get_object_tracks(video_frames,
@@ -133,10 +133,9 @@ def main():
         team_2_color=team_assigner.team_2_color_rgb
     )
     speed_and_distance_drawer = SpeedAndDistanceDrawer()
-    
     # Initialize ActionRecognitionDrawer and set predictions
     action_recognition_drawer = ActionRecognitionDrawer()
-    action_recognition_drawer.set_predictions(action_predictions)
+    action_recognition_drawer.set_predictions(action_predictions)  # Set predictions here
     
     ## Draw object Tracks
     output_video_frames = player_tracks_drawer.draw(video_frames, 
@@ -179,8 +178,8 @@ def main():
                                                     ball_aquisition,
                                                     )
 
-    # Draw Action Recognition Results
-    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks)
+    # Draw action recognition results
+    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
     
     # Save video
     save_video(output_video_frames, args.output_video)

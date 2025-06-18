@@ -26,8 +26,8 @@ class ActionRecognitionDrawer:
 
         Args:
             video_frames (list): List of frames (images).
-            player_tracks (dict): Player tracking data for each frame, 
-                                  formatted as {frame_index: {player_id: {'bbox': (x1, y1, x2, y2)}}}
+            player_tracks (list): Player tracking data for each frame, 
+                                  formatted as [{player_id: {'bbox': (x1, y1, x2, y2)}}]
         
         Returns:
             list: Output video frames with action labels drawn.
@@ -42,14 +42,16 @@ class ActionRecognitionDrawer:
 
             if action is not None:
                 # Draw action label next to each player in the frame
-                for player_id, player_data in player_tracks.get(frame_idx, {}).items():
-                    bbox = player_data['bbox']
-                    x1, y1, x2, y2 = bbox
-                    position = [int((x1 + x2) / 2), int(y2) + 40]
+                if frame_idx < len(player_tracks):  # Ensure the frame_idx is within range
+                    player_data = player_tracks[frame_idx]
+                    for player_id, player_info in player_data.items():
+                        bbox = player_info['bbox']
+                        x1, y1, x2, y2 = bbox
+                        position = [int((x1 + x2) / 2), int(y2) + 40]
 
-                    # Display the action label on the frame
-                    cv2.putText(output_frame, f"Action: {action}", (position[0], position[1]), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                        # Display the action label on the frame
+                        cv2.putText(output_frame, f"Action: {action}", (position[0], position[1]), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
             output_video_frames.append(output_frame)
 
