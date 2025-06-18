@@ -1,7 +1,7 @@
 import torch
 import cv2
 import numpy as np
-from utils.stubs_utils import read_stub, save_stub  # 确保您导入了 save_stub
+from utils.stubs_utils import read_stub, save_stub  # 確保您導入了 save_stub
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 from PIL import Image  # 引入 PIL 库，用于图像转换
@@ -60,9 +60,9 @@ class ActionRecognitionModel:
         for frame_idx, frame in enumerate(video_frames):
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB
 
-            # Verify the image has 3 channels (RGB)
-            if frame_rgb.shape[2] != 3:
-                raise ValueError(f"Expected image to have 3 channels, but got {frame_rgb.shape[2]} channels.")
+            # If the frame has only 1 channel (grayscale), repeat it to make 3 channels
+            if frame_rgb.shape[2] == 1:
+                frame_rgb = np.repeat(frame_rgb, 3, axis=2)  # Repeat grayscale to make 3 channels
             
             # Convert numpy array (BGR) to PIL Image
             frame_pil = Image.fromarray(frame_rgb)
@@ -81,3 +81,4 @@ class ActionRecognitionModel:
         save_stub(stub_path, actions)
         
         return actions
+    
