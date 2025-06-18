@@ -95,7 +95,8 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 
     # For each frame, track players and draw action labels
     for frame_idx, frame in enumerate(frames):
-        player_data = player_tracker.get_object_tracks(frame)  # get player positions and IDs
+        # Ensure that we are not passing None to save_stub
+        player_data = player_tracker.get_object_tracks(frame, read_from_stub=False, stub_path="")  # Pass empty string instead of None
         action = action_predictions.get(frame_idx, None)
 
         if action is not None:
