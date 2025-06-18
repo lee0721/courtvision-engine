@@ -1,7 +1,7 @@
 import torch
 import cv2
 import numpy as np
-from utils.stubs_utils import read_stub, save_stub  # 確保您導入了 save_stub
+from utils.stubs_utils import read_stub, save_stub  # 确保您导入了 save_stub
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 from PIL import Image  # 引入 PIL 库，用于图像转换
@@ -81,4 +81,3 @@ class ActionRecognitionModel:
         save_stub(stub_path, actions)
         
         return actions
-    
