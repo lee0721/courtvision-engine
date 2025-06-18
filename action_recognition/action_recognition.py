@@ -1,7 +1,7 @@
 import torch
 import cv2
 import numpy as np
-from utils.stubs_utils import read_stub, save_stub  # 確保您導入了 save_stub
+from utils.stubs_utils import read_stub, save_stub  # 确保您导入了 save_stub
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 from PIL import Image  # 引入 PIL 库，用于图像转换
@@ -20,7 +20,7 @@ class ActionRecognitionModel:
         """
         # Define the model architecture
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
-        # 修改最後一層的輸出為 10 類別
+        # 修改最后一层的输出为 10 类别
         model.fc = torch.nn.Linear(model.fc.in_features, 10)
         
         # Load the model state dict (weights)
@@ -64,7 +64,7 @@ class ActionRecognitionModel:
             if frame_rgb.shape[2] != 3:
                 raise ValueError(f"Expected image to have 3 channels, but got {frame_rgb.shape[2]} channels.")
             
-            # Convert numpy array (RGB) to PIL Image
+            # Convert numpy array (BGR) to PIL Image
             frame_pil = Image.fromarray(frame_rgb)
             
             # Apply transformations to ensure we have 3 channels (RGB)
