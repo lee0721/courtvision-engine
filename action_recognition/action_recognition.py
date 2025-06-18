@@ -64,7 +64,7 @@ class ActionRecognitionModel:
             if frame_rgb.shape[2] != 3:
                 raise ValueError(f"Expected image to have 3 channels, but got {frame_rgb.shape[2]} channels.")
             
-            # Convert numpy array (BGR) to PIL Image
+            # Convert numpy array (RGB) to PIL Image
             frame_pil = Image.fromarray(frame_rgb)
             
             # Apply transformations to ensure we have 3 channels (RGB)
