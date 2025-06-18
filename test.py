@@ -119,7 +119,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 
 # Example usage:
 model_path = "models/action_r2plus1d_best.pt"  # 預訓練模型的路徑
-video_path = "input_videos/test_video.mp4"  # 測試影片路徑
+video_path = "input_videos/video_1.mp4"  # 測試影片路徑
 output_path = "output_videos/test_output.mp4"  # 輸出影片的路徑
 player_detector_path = "models/player_detector.pt"  # 載入 YOLOv8 訓練好的球員檢測模型
 
