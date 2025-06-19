@@ -72,7 +72,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
     # 動作辨識
     action_predictions = action_model.predict(frames, read_from_stub=True)
 
-    # 球員追蹤（改為指定合法 stub path 避免 NoneType 問題）
+    # 球員追蹤
     player_tracks = player_tracker.get_object_tracks(
         frames, 
         read_from_stub=False, 
@@ -90,7 +90,8 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 
         if idx < len(player_tracks):
             for player_id, player_info in player_tracks[idx].items():
-                x1, y1, x2, y2 = player_info['bbox']
+                # 修正：將座標轉為 int
+                x1, y1, x2, y2 = map(int, player_info['bbox'])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"ID: {player_id}", (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
