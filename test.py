@@ -23,7 +23,7 @@ else:
 class ActionRecognitionModel:
     def __init__(self, model_path):
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
-        model.fc = torch.nn.Linear(model.fc.in_features, 11)  # class 0~10
+        model.fc = torch.nn.Linear(model.fc.in_features, 10)  # class 0~9
         state_dict = torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
         model.load_state_dict(state_dict)
         self.model = model.eval()
