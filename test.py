@@ -72,8 +72,12 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
     # 動作辨識
     action_predictions = action_model.predict(frames, read_from_stub=True)
 
-    # 球員追蹤
-    player_tracks = player_tracker.get_object_tracks(frames, read_from_stub=False, stub_path=None)
+    # 球員追蹤（改為指定合法 stub path 避免 NoneType 問題）
+    player_tracks = player_tracker.get_object_tracks(
+        frames, 
+        read_from_stub=False, 
+        stub_path="stubs/player_tracks_tmp.pkl"
+    )
 
     # 建立輸出影片列表
     output_frames = []
