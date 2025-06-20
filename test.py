@@ -130,7 +130,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 # --------- 執行入口 ---------
 if __name__ == "__main__":
     model_path = "models/action_r2plus1d_best.pt"
-    video_path = "input_videos/video_1.mp4"
+    video_path = "input_videos/video_2.mp4"
     output_path = "output_videos/test_output.mp4"
     player_detector_path = "models/player_detector.pt"
     test_action_recognition_on_video(model_path, video_path, output_path, player_detector_path)
