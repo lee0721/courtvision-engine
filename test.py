@@ -28,18 +28,20 @@ class ActionRecognitionModel:
         model.load_state_dict(state_dict)
         self.model = model.eval()
 
+        self.transform = Compose([
+            Resize((112, 112)),
+            ToTensor(),
+            Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        self.clip_len = 16
+
     def predict(self, frames, read_from_stub=False, stub_path="stubs/action_predictions.pkl"):
         predictions = read_stub(read_from_stub, stub_path)
         if predictions is not None:
             return predictions
 
         actions = {}
-        transform = Compose([
-            Resize((112, 112)),
-            ToTensor(),
-            Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-        clip_len = 16
+        clip_len = self.clip_len
         for start in range(0, len(frames) - clip_len + 1):
             clip = frames[start:start+clip_len]
             clip_tensor = []
@@ -48,7 +50,7 @@ class ActionRecognitionModel:
                 if frame_rgb.shape[2] == 1:
                     frame_rgb = np.repeat(frame_rgb, 3, axis=2)
                 frame_pil = Image.fromarray(frame_rgb)
-                frame_tensor = transform(frame_pil)
+                frame_tensor = self.transform(frame_pil)
                 clip_tensor.append(frame_tensor)
             clip_tensor = torch.stack(clip_tensor).permute(1, 0, 2, 3).unsqueeze(0)
             with torch.no_grad():
@@ -69,31 +71,52 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
     action_model = ActionRecognitionModel(model_path)
     player_tracker = DeepSortPlayerTracker(player_detector_path)
 
-    # 動作辨識
-    action_predictions = action_model.predict(frames, read_from_stub=True)
-
     # 球員追蹤
     player_tracks = player_tracker.get_object_tracks(
         frames, 
         read_from_stub=False, 
-        stub_path="stubs/player_tracks_tmp.pkl"
+        stub_path="stubs/deepsort_player_tracks.pkl"
     )
+
+    # 準備存放每個球員的裁切影像片段
+    player_clips = {}
+    player_actions = {}
+    clip_len = action_model.clip_len
 
     # 建立輸出影片列表
     output_frames = []
 
     for idx, frame in enumerate(frames):
         frame = frame.copy()
-        action_id = action_predictions.get(idx)
-        label = LABELS.get(str(action_id), str(action_id))
-        cv2.putText(frame, f"Action: {label}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 2)
-
         if idx < len(player_tracks):
             for player_id, player_info in player_tracks[idx].items():
-                # 修正：將座標轉為 int
+                # 裁切球員區塊
                 x1, y1, x2, y2 = map(int, player_info['bbox'])
+                player_crop = frame[y1:y2, x1:x2]
+                if player_crop.size == 0:
+                    continue
+
+                # 初始化該球員的 clip list
+                if player_id not in player_clips:
+                    player_clips[player_id] = []
+                player_clips[player_id].append(player_crop)
+
+                # 若 clip 長度達到要求，進行動作預測並清空 clip
+                if len(player_clips[player_id]) == clip_len:
+                    action_preds = action_model.predict(player_clips[player_id], read_from_stub=False)
+                    # 取最後一個 frame 的預測作為該球員當前動作
+                    player_actions[player_id] = action_preds.get(clip_len - 1, None)
+                    player_clips[player_id] = []
+
+                # 繪製方框與 ID
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f"ID: {player_id}", (x1, y1 - 10),
+                label = f"ID: {player_id}"
+                # 加上動作標籤
+                action_id = player_actions.get(player_id)
+                action_label = LABELS.get(str(action_id), '') if action_id is not None else ''
+                if action_label:
+                    label += f", {action_label}"
+                cv2.putText(frame, label, (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
         output_frames.append(frame)
