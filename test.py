@@ -78,7 +78,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
         stub_path="stubs/deepsort_player_tracks.pkl"
     )
 
-    # 準備存放每個球員的裁切影像片段
+    # 準備存放每個球員的補切影像片段
     player_clips = {}
     player_actions = {}
     clip_len = action_model.clip_len
@@ -90,7 +90,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
         frame = frame.copy()
         if idx < len(player_tracks):
             for player_id, player_info in player_tracks[idx].items():
-                # 裁切球員區塊
+                # 補切球員區塊
                 x1, y1, x2, y2 = map(int, player_info['bbox'])
                 player_crop = frame[y1:y2, x1:x2]
                 if player_crop.size == 0:
@@ -100,6 +100,8 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
                 if player_id not in player_clips:
                     player_clips[player_id] = []
                 player_clips[player_id].append(player_crop)
+
+                print(f"Frame {idx} - Player ID {player_id} clip length: {len(player_clips[player_id])}")
 
                 # 若 clip 長度達到要求，進行動作預測並清空 clip
                 if len(player_clips[player_id]) == clip_len:
