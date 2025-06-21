@@ -18,11 +18,11 @@ class ActionRecognitionModel:
         Args:
             model_path (str): Path to the pre-trained model.
         """
-        # Define the model architecture
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
-        # 修改最后一层的输出为 10 类别
-        model.fc = torch.nn.Linear(model.fc.in_features, 10)
-        
+        model.fc = torch.nn.Sequential(
+            torch.nn.Dropout(p=0.5),
+            torch.nn.Linear(model.fc.in_features, 10)
+        )
         # Load the model state dict (weights)
         state_dict = torch.load(model_path)
         model.load_state_dict(state_dict)
