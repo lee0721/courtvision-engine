@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 
-from trackers import DeepSortPlayerTracker
+from trackers.player_tracker import PlayerTracker
 from utils.video_utils import read_video, save_video
 from utils.stubs_utils import read_stub, save_stub
 
@@ -73,7 +73,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 
     # 載入模型與追蹤器
     action_model = ActionRecognitionModel(model_path)
-    player_tracker = DeepSortPlayerTracker(player_detector_path)
+    player_tracker = PlayerTracker(player_detector_path)
 
     # 球員追蹤
     player_tracks = player_tracker.get_object_tracks(
