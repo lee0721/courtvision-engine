@@ -22,11 +22,12 @@ else:
 
 class ActionRecognitionModel:
     def __init__(self, model_path):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
         model.fc = torch.nn.Linear(model.fc.in_features, 10)  # class 0~9
-        state_dict = torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        state_dict = torch.load(model_path, map_location=self.device)
         model.load_state_dict(state_dict)
-        self.model = model.eval()
+        self.model = model.to(self.device).eval()
 
         self.transform = Compose([
             Resize((112, 112)),
@@ -36,29 +37,29 @@ class ActionRecognitionModel:
         self.clip_len = 16
 
     def predict(self, frames, read_from_stub=False, stub_path="stubs/action_predictions.pkl"):
+        if len(frames) < self.clip_len:
+            return {}
+
         predictions = read_stub(read_from_stub, stub_path)
         if predictions is not None:
             return predictions
 
         actions = {}
-        clip_len = self.clip_len
-        for start in range(0, len(frames) - clip_len + 1):
-            clip = frames[start:start+clip_len]
-            clip_tensor = []
-            for frame in clip:
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                if frame_rgb.shape[2] == 1:
-                    frame_rgb = np.repeat(frame_rgb, 3, axis=2)
-                frame_pil = Image.fromarray(frame_rgb)
-                frame_tensor = self.transform(frame_pil)
-                clip_tensor.append(frame_tensor)
-            clip_tensor = torch.stack(clip_tensor).permute(1, 0, 2, 3).unsqueeze(0)
-            with torch.no_grad():
-                output = self.model(clip_tensor)
-                prediction = torch.argmax(output, dim=1).item()
-            for i in range(clip_len):
-                actions[start + i] = prediction
+        clip = frames[-self.clip_len:]
+        clip_tensor = []
+        for frame in clip:
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if frame_rgb.shape[2] == 1:
+                frame_rgb = np.repeat(frame_rgb, 3, axis=2)
+            frame_pil = Image.fromarray(frame_rgb)
+            frame_tensor = self.transform(frame_pil)
+            clip_tensor.append(frame_tensor)
 
+        clip_tensor = torch.stack(clip_tensor).permute(1, 0, 2, 3).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            output = self.model(clip_tensor)
+            prediction = torch.argmax(output, dim=1).item()
+        actions[self.clip_len - 1] = prediction
         save_stub(stub_path, actions)
         return actions
 
@@ -78,12 +79,9 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
         stub_path="stubs/deepsort_player_tracks.pkl"
     )
 
-    # 準備存放每個球員的補切影像片段
     player_clips = {}
     player_actions = {}
     clip_len = action_model.clip_len
-
-    # 建立輸出影片列表
     output_frames = []
 
     for idx, frame in enumerate(frames):
@@ -96,6 +94,9 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
                 if player_crop.size == 0:
                     continue
 
+                # 強制 resize 避免大小不一
+                player_crop = cv2.resize(player_crop, (112, 112))
+
                 # 初始化該球員的 clip list
                 if player_id not in player_clips:
                     player_clips[player_id] = []
@@ -103,17 +104,14 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 
                 print(f"Frame {idx} - Player ID {player_id} clip length: {len(player_clips[player_id])}")
 
-                # 若 clip 長度達到要求，進行動作預測並清空 clip
-                if len(player_clips[player_id]) == clip_len:
-                    action_preds = action_model.predict(player_clips[player_id], read_from_stub=False)
-                    # 取最後一個 frame 的預測作為該球員當前動作
+                if len(player_clips[player_id]) >= clip_len:
+                    clip = player_clips[player_id][-clip_len:]
+                    action_preds = action_model.predict(clip, read_from_stub=False)
                     player_actions[player_id] = action_preds.get(clip_len - 1, None)
-                    player_clips[player_id] = []
 
                 # 繪製方框與 ID
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 label = f"ID: {player_id}"
-                # 加上動作標籤
                 action_id = player_actions.get(player_id)
                 action_label = LABELS.get(str(action_id), '') if action_id is not None else ''
                 if action_label:
@@ -130,7 +128,7 @@ def test_action_recognition_on_video(model_path, video_path, output_path, player
 # --------- 執行入口 ---------
 if __name__ == "__main__":
     model_path = "models/action_r2plus1d_best.pt"
-    video_path = "input_videos/video_2.mp4"
+    video_path = "input_videos/video_1.mp4"
     output_path = "output_videos/test_output.mp4"
     player_detector_path = "models/player_detector.pt"
     test_action_recognition_on_video(model_path, video_path, output_path, player_detector_path)
