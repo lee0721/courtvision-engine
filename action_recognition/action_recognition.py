@@ -23,8 +23,46 @@ class ActionRecognitionModel:
             Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         self.clip_len = 16
+        self.stride = 8
 
-    def preprocess_clips(self, clips):
+    def predict(self, video_frames, player_tracks, read_from_stub=False, stub_path=None):
+        predictions = read_stub(read_from_stub, stub_path)
+        if predictions is not None:
+            return predictions
+
+        player_clips = {}
+        for frame_idx in range(len(video_frames)):
+            if frame_idx >= len(player_tracks):
+                continue
+            for player_id, player_info in player_tracks[frame_idx].items():
+                x1, y1, x2, y2 = map(int, player_info['bbox'])
+                crop = video_frames[frame_idx][y1:y2, x1:x2]
+                if crop.size == 0:
+                    continue
+                crop_resized = cv2.resize(crop, (112, 112))
+                if player_id not in player_clips:
+                    player_clips[player_id] = []
+                player_clips[player_id].append(crop_resized)
+
+        results = {}
+        for player_id, frames in player_clips.items():
+            clips = []
+            for i in range(0, len(frames) - self.clip_len + 1, self.stride):
+                clips.append(frames[i:i + self.clip_len])
+
+            if not clips:
+                continue
+
+            input_tensor = self._preprocess_clips(clips)
+            with torch.no_grad():
+                outputs = self.model(input_tensor)
+                preds = torch.argmax(outputs, dim=1).cpu().tolist()
+            results[player_id] = preds
+
+        save_stub(stub_path, results)
+        return results
+
+    def _preprocess_clips(self, clips):
         tensor_batch = []
         for clip in clips:
             clip_tensor = []
@@ -37,13 +75,4 @@ class ActionRecognitionModel:
                 clip_tensor.append(frame_tensor)
             clip_tensor = torch.stack(clip_tensor).permute(1, 0, 2, 3)  # C, T, H, W
             tensor_batch.append(clip_tensor)
-        return torch.stack(tensor_batch).to(self.device)  # B, C, T, H, W
-
-    def predict_batch(self, clips):
-        if len(clips) == 0:
-            return []
-        input_tensor = self.preprocess_clips(clips)
-        with torch.no_grad():
-            output = self.model(input_tensor)
-            predictions = torch.argmax(output, dim=1).cpu().numpy().tolist()
-        return predictions
+        return torch.stack(tensor_batch).to(self.device)

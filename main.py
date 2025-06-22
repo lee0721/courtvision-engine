@@ -113,7 +113,7 @@ def main():
     player_speed_per_frame = speed_and_distance_calculator.calculate_speed(player_distances_per_frame)
     
     # Run Action Recognition
-    action_predictions = action_recognition_model.predict(video_frames, read_from_stub=True, 
+    action_predictions = action_recognition_model.predict(video_frames, player_tracks, read_from_stub=True, 
                                                            stub_path=os.path.join(args.stub_path, 'action_recognition_predictions.pkl'))
     
     # Draw output   
