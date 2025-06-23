@@ -35,7 +35,7 @@ class ActionRecognitionDrawer:
                 for player_id, player_info in player_data.items():
                     bbox = player_info['bbox']
                     x1, y1, x2, y2 = bbox
-                    position = [int((x1 + x2) / 2)-20, int(y2) + 30]
+                    position = [int((x1 + x2) / 2)-20, int(y2) + 10]
 
                     label = ""
                     if player_id in self.action_predictions:
