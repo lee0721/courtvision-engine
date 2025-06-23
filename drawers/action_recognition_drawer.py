@@ -45,7 +45,7 @@ class ActionRecognitionDrawer:
 
                     if label:
                         cv2.putText(output_frame, f"Action: {label}", (position[0], position[1]),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, lineType=cv2.LINE_AA)
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1.5, lineType=cv2.LINE_AA)
 
             output_video_frames.append(output_frame)
 
