@@ -14,8 +14,16 @@ class ActionRecognitionModel:
             torch.nn.Dropout(p=0.5),
             torch.nn.Linear(model.fc.in_features, 10)
         )
-        state_dict = torch.load(model_path, map_location=self.device)
-        model.load_state_dict(state_dict)
+        checkpoint = torch.load(model_path, map_location=self.device)
+
+        # 如果是完整 checkpoint（有 'state_dict'、'epoch' 等 key）
+        if 'state_dict' in checkpoint:
+            state_dict = checkpoint['state_dict']
+        else:
+            state_dict = checkpoint  # 就是純 model weights
+
+        model.load_state_dict(state_dict, strict=False)
+        
         self.model = model.to(self.device).eval()
         self.transform = Compose([
             Resize((112, 112)),
