@@ -5,7 +5,13 @@ from utils.stubs_utils import read_stub, save_stub
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 from PIL import Image
+import json
+import os
 
+LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "dataset", "labels_dict.json")
+with open(LABELS_DICT_PATH, "r") as f:
+    LABELS_DICT = json.load(f)
+    
 class ActionRecognitionModel:
     def __init__(self, model_path):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,7 +67,7 @@ class ActionRecognitionModel:
                 else:
                     remaining = frames[i:]
                     pad_count = self.clip_len - len(remaining)
-                    pad_frames = [np.zeros_like(remaining[0]) for _ in range(pad_count)]
+                    pad_frames = [remaining[-1].copy() for _ in range(pad_count)]
                     padded_clip = remaining + pad_frames
                     clips.append(padded_clip)
 
@@ -72,6 +78,8 @@ class ActionRecognitionModel:
             with torch.no_grad():
                 outputs = self.model(input_tensor)
                 preds = torch.argmax(outputs, dim=1).cpu().tolist()
+                label_names = [LABELS_DICT[str(p)] for p in preds]
+                print(f"[DEBUG] player_id: {player_id}, preds: {preds}, labels: {label_names}")
             results[player_id] = preds
 
         save_stub(stub_path, results)
