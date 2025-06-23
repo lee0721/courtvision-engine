@@ -61,8 +61,10 @@ class ActionRecognitionModel:
         results = {}
         for player_id, frames in player_clips.items():
             clips = []
+            print(f"[DEBUG] player_id: {player_id}, total_frames: {len(frames)}")
             for i in range(0, len(frames) - self.clip_len + 1, self.stride):
                 clips.append(frames[i:i + self.clip_len])
+            print(f"[DEBUG] player_id: {player_id}, num_clips: {len(clips)}")
 
             if not clips:
                 continue
