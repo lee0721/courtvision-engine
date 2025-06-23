@@ -40,12 +40,12 @@ class ActionRecognitionDrawer:
                     label = ""
                     if player_id in self.action_predictions:
                         clip_idx = frame_idx // vid_stride
-                        if clip_idx < len(self.action_predictions[player_id]):
-                            label = self.action_predictions[player_id][clip_idx]
-
-                    if label:
-                        cv2.putText(output_frame, f"Action: {label}", (position[0], position[1]),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1.5, lineType=cv2.LINE_AA)
+                        player_labels = self.action_predictions[player_id]
+                        if 0 <= clip_idx < len(player_labels):
+                            label = player_labels[clip_idx]
+                            if label:
+                                cv2.putText(output_frame, f"Action: {label}", (position[0], position[1]),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1.5, lineType=cv2.LINE_AA)
 
             output_video_frames.append(output_frame)
 
