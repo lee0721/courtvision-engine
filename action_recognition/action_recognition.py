@@ -55,8 +55,15 @@ class ActionRecognitionModel:
         results = {}
         for player_id, frames in player_clips.items():
             clips = []
-            for i in range(0, len(frames) - self.clip_len + 1, self.stride):
-                clips.append(frames[i:i + self.clip_len])
+            for i in range(0, len(frames), self.stride):
+                if i + self.clip_len <= len(frames):
+                    clips.append(frames[i:i + self.clip_len])
+                else:
+                    remaining = frames[i:]
+                    pad_count = self.clip_len - len(remaining)
+                    pad_frames = [np.zeros_like(remaining[0]) for _ in range(pad_count)]
+                    padded_clip = remaining + pad_frames
+                    clips.append(padded_clip)
 
             if not clips:
                 continue
