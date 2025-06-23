@@ -7,6 +7,9 @@ from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
 from PIL import Image
 import json
 import os
+import random
+import numpy as np
+import torch.backends.cudnn as cudnn
 
 LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "dataset", "labels_dict.json")
 with open(LABELS_DICT_PATH, "r") as f:
@@ -14,6 +17,17 @@ with open(LABELS_DICT_PATH, "r") as f:
     
 class ActionRecognitionModel:
     def __init__(self, model_path):
+        # Set random seeds for reproducibility
+        seed = 42
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        # Force deterministic algorithms
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)
         model.fc = torch.nn.Sequential(
