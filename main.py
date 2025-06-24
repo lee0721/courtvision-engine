@@ -169,13 +169,11 @@ def main():
                                                              interceptions)
     
     # Speed and Distance Drawer
-    '''
     output_video_frames = speed_and_distance_drawer.draw(output_video_frames,
                                                          player_tracks,
                                                          player_distances_per_frame,
                                                          player_speed_per_frame
                                                          )
-    '''
     
     ## Draw Tactical View
     output_video_frames = tactical_view_drawer.draw(output_video_frames,
