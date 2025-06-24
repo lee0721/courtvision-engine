@@ -44,6 +44,7 @@ class TeamAssigner:
             "blue shirt": [0, 0, 255],
             "yellow shirt": [255, 255, 0],
             "black shirt": [0, 0, 0],
+            "green shirt": [0, 128, 0],
         }
 
         self.team_1_color_rgb = self.color_name_to_rgb.get(self.team_1_class_name, [255, 255, 255])
