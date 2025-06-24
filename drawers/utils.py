@@ -36,60 +36,59 @@ def draw_traingle(frame,bbox,color):
 
     return frame
 
-def draw_ellipse(frame,bbox,color,track_id=None):
+def draw_ellipse(frame, bbox, color, track_id=None):
     """
     Draws an ellipse and an optional rectangle with a track ID on the given frame at the specified bounding box location.
-
-    Args:
-        frame (numpy.ndarray): The frame on which to draw the ellipse.
-        bbox (tuple): A tuple representing the bounding box (x, y, width, height).
-        color (tuple): The color of the ellipse in BGR format.
-        track_id (int, optional): The track ID to display inside a rectangle. Defaults to None.
-
-    Returns:
-        numpy.ndarray: The frame with the ellipse and optional track ID drawn on it.
     """
     y2 = int(bbox[3])
     x_center, _ = get_center_of_bbox(bbox)
     width = get_bbox_width(bbox)
 
-    cv2.ellipse(
-        frame,
-        center=(x_center,y2),
-        axes=(int(width), int(0.35*width)),
-        angle=0.0,
-        startAngle=-45,
-        endAngle=235,
-        color = color,
-        thickness=2,
-        lineType=cv2.LINE_4
-    )
+    # 防止寬度為負數或 0
+    width = max(int(width), 1)
+    height = max(int(0.35 * width), 1)
 
-    rectangle_width = 40
-    rectangle_height=20
-    x1_rect = x_center - rectangle_width//2
-    x2_rect = x_center + rectangle_width//2
-    y1_rect = (y2- rectangle_height//2) +15
-    y2_rect = (y2+ rectangle_height//2) +15
+    try:
+        cv2.ellipse(
+            frame,
+            center=(x_center, y2),
+            axes=(width, height),
+            angle=0.0,
+            startAngle=-45,
+            endAngle=235,
+            color=color,
+            thickness=2,
+            lineType=cv2.LINE_4
+        )
+    except cv2.error as e:
+        print(f"[OpenCV 錯誤] ellipse 繪圖失敗：track_id={track_id} bbox={bbox} 寬度={width} 錯誤={e}")
 
+    # 畫 track_id 的小框
     if track_id is not None:
+        rectangle_width = 40
+        rectangle_height = 20
+        x1_rect = x_center - rectangle_width // 2
+        x2_rect = x_center + rectangle_width // 2
+        y1_rect = (y2 - rectangle_height // 2) + 15
+        y2_rect = (y2 + rectangle_height // 2) + 15
+
         cv2.rectangle(frame,
-                        (int(x1_rect),int(y1_rect) ),
-                        (int(x2_rect),int(y2_rect)),
-                        color,
-                        cv2.FILLED)
-        
-        x1_text = x1_rect+12
+                      (int(x1_rect), int(y1_rect)),
+                      (int(x2_rect), int(y2_rect)),
+                      color,
+                      cv2.FILLED)
+
+        x1_text = x1_rect + 12
         if int(track_id) > 99:
-            x1_text -=10
-        
+            x1_text -= 10
+
         cv2.putText(
             frame,
             f"{track_id}",
-            (int(x1_text),int(y1_rect+15)),
+            (int(x1_text), int(y1_rect + 15)),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
-            (0,0,0),
+            (0, 0, 0),
             2
         )
 

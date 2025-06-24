@@ -9,26 +9,30 @@ def get_center_of_bbox(bbox):
     """
     Calculate the center coordinates of a bounding box.
 
+    Automatically corrects the coordinate order if needed.
+
     Args:
         bbox (tuple): Bounding box coordinates in format (x1, y1, x2, y2).
 
     Returns:
         tuple: Center coordinates (x, y) of the bounding box.
     """
-    x1,y1,x2,y2 = bbox
-    return int((x1+x2)/2),int((y1+y2)/2)
+    x1, y1, x2, y2 = bbox
+    x1, x2 = sorted([x1, x2])
+    y1, y2 = sorted([y1, y2])
+    return int((x1 + x2) / 2), int((y1 + y2) / 2)
 
 def get_bbox_width(bbox):
     """
-    Calculate the width of a bounding box.
+    Calculate the absolute width of a bounding box.
 
     Args:
         bbox (tuple): Bounding box coordinates in format (x1, y1, x2, y2).
 
     Returns:
-        int: Width of the bounding box.
+        int: Width of the bounding box (always non-negative).
     """
-    return bbox[2]-bbox[0]
+    return abs(bbox[2] - bbox[0])
 
 def measure_distance(p1,p2):
     """
