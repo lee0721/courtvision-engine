@@ -159,11 +159,9 @@ def main():
     #output_video_frames = frame_number_drawer.draw(output_video_frames)
 
     # Draw Team Ball Control
-    '''
     output_video_frames = team_ball_control_drawer.draw(output_video_frames,
                                                         player_assignment,
                                                         ball_aquisition)
-    '''
     
     # Draw Passes and Interceptions
     '''
