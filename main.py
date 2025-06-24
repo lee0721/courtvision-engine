@@ -178,7 +178,6 @@ def main():
     '''
     
     ## Draw Tactical View
-    '''
     output_video_frames = tactical_view_drawer.draw(output_video_frames,
                                                     tactical_view_converter.court_image_path,
                                                     tactical_view_converter.width,
@@ -188,7 +187,6 @@ def main():
                                                     player_assignment,
                                                     ball_aquisition,
                                                     )
-    '''
     
     # Draw action recognition results
     #output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
