@@ -164,11 +164,9 @@ def main():
                                                         ball_aquisition)
     
     # Draw Passes and Interceptions
-    '''
     output_video_frames = pass_and_interceptions_drawer.draw(output_video_frames,
                                                              passes,
                                                              interceptions)
-    '''
     
     # Speed and Distance Drawer
     '''
