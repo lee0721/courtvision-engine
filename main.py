@@ -153,10 +153,10 @@ def main():
     output_video_frames = ball_tracks_drawer.draw(output_video_frames, ball_tracks)
 
     ## Draw KeyPoints
-    #output_video_frames = court_keypoint_drawer.draw(output_video_frames, court_keypoints_per_frame)
+    output_video_frames = court_keypoint_drawer.draw(output_video_frames, court_keypoints_per_frame)
 
     ## Draw Frame Number
-    #output_video_frames = frame_number_drawer.draw(output_video_frames)
+    output_video_frames = frame_number_drawer.draw(output_video_frames)
 
     # Draw Team Ball Control
     output_video_frames = team_ball_control_drawer.draw(output_video_frames,
