@@ -51,15 +51,19 @@ class PlayerTracksDrawer:
             for track_id, player in player_dict.items():
                 team_id = player_assignment_for_frame.get(track_id,self.default_player_team_id)
 
+                '''
                 if team_id == 1:
                     color = self.team_1_color[::-1]  # RGB to BGR
                 else:
                     color = self.team_2_color[::-1]
+                '''
+                #test
+                color = (255, 255, 255) 
 
                 frame = draw_ellipse(frame, player["bbox"],color, track_id)
 
-                if track_id == player_id_has_ball:
-                    frame = draw_traingle(frame, player["bbox"],(0,0,255))
+                #if track_id == player_id_has_ball:
+                #    frame = draw_traingle(frame, player["bbox"],(0,0,255))
 
             output_video_frames.append(frame)
 
