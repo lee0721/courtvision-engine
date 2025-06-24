@@ -187,7 +187,7 @@ def main():
                                                     )
     
     # Draw action recognition results
-    #output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
+    output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
     
     # Save video
     save_video(output_video_frames, args.output_video)
