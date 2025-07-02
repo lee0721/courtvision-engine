@@ -9,7 +9,7 @@ class FrameNumberDrawer:
         for i in range(len(frames)):
             frame = frames[i].copy()
 
-            frame_text = f"Frame {i}"
+            frame_text = f"{i}"
 
             # 計算文字大小以畫框
             text_size = cv2.getTextSize(frame_text, cv2.FONT_HERSHEY_DUPLEX, 1, 2)[0]
