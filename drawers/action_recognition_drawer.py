@@ -6,7 +6,7 @@ class ActionRecognitionDrawer:
     Responsible for drawing action recognition results on each frame.
     Each player can have their own action prediction per clip.
     """
-    def __init__(self, labels_file='action_recognition/dataset/labels_dict.json'):
+    def __init__(self, labels_file='action_recognition/training_notebooks/dataset/labels_dict.json'):
         self.action_predictions = {}
         with open(labels_file, 'r') as f:
             self.action_labels = json.load(f)
