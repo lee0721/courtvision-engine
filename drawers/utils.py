@@ -1,50 +1,51 @@
 """
 A utility module providing functions for drawing shapes on video frames.
 
-This module includes functions to draw triangles and ellipses on frames, which can be used
-to represent various annotations such as player positions or ball locations in sports analysis.
+This module includes functions to draw triangles, ellipses, and rounded rectangles,
+which are used to represent various annotations such as player IDs, ball pointers,
+or team statistics in sports video analysis.
 """
-
 import cv2 
 import numpy as np
 import sys 
 sys.path.append('../')
 from utils import get_center_of_bbox, get_bbox_width, get_foot_position
 
-def draw_traingle(frame,bbox,color):
+def draw_traingle(frame, bbox, color):
     """
-    Draws a filled triangle on the given frame at the specified bounding box location.
+    Draws a filled triangle (used for ball or ball possessor) on the given frame.
 
     Args:
-        frame (numpy.ndarray): The frame on which to draw the triangle.
-        bbox (tuple): A tuple representing the bounding box (x, y, width, height).
-        color (tuple): The color of the triangle in BGR format.
-
-    Returns:
-        numpy.ndarray: The frame with the triangle drawn on it.
+        frame (np.ndarray): The target image to draw on.
+        bbox (tuple): Bounding box (x, y, w, h) of the object.
+        color (tuple): Triangle color in BGR.
     """
-    y= int(bbox[1])
-    x,_ = get_center_of_bbox(bbox)
+    y = int(bbox[1])
+    x, _ = get_center_of_bbox(bbox)
 
     triangle_points = np.array([
-        [x,y],
-        [x-10,y-20],
-        [x+10,y-20],
+        [x, y],
+        [x - 10, y - 20],
+        [x + 10, y - 20],
     ])
-    cv2.drawContours(frame, [triangle_points],0,color, cv2.FILLED)
-    cv2.drawContours(frame, [triangle_points],0,(0,0,0), 2)
-
+    cv2.drawContours(frame, [triangle_points], 0, color, cv2.FILLED)
+    cv2.drawContours(frame, [triangle_points], 0, (0, 0, 0), 2)
     return frame
 
 def draw_ellipse(frame, bbox, color, track_id=None):
     """
-    Draws an ellipse and an optional rectangle with a track ID on the given frame at the specified bounding box location.
+    Draws an ellipse under a player to represent presence and optionally show their ID.
+
+    Args:
+        frame (np.ndarray): Frame to draw on.
+        bbox (tuple): Bounding box of player (x1, y1, x2, y2).
+        color (tuple): BGR color of the ellipse.
+        track_id (int, optional): If provided, draws a label box with this ID.
     """
     y2 = int(bbox[3])
     x_center, _ = get_center_of_bbox(bbox)
     width = get_bbox_width(bbox)
 
-    # 防止寬度為負數或 0
     width = max(int(width), 1)
     height = max(int(0.35 * width), 1)
 
@@ -63,7 +64,7 @@ def draw_ellipse(frame, bbox, color, track_id=None):
     except cv2.error as e:
         print(f"[OpenCV 錯誤] ellipse 繪圖失敗：track_id={track_id} bbox={bbox} 寬度={width} 錯誤={e}")
 
-    # 畫 track_id 的小框
+    # Track ID label
     if track_id is not None:
         rectangle_width = 40
         rectangle_height = 20
@@ -78,6 +79,7 @@ def draw_ellipse(frame, bbox, color, track_id=None):
                       color,
                       cv2.FILLED)
 
+        # Adjust text position based on number of digits
         x1_text = x1_rect + 12
         if int(track_id) > 99:
             x1_text -= 10
@@ -96,34 +98,30 @@ def draw_ellipse(frame, bbox, color, track_id=None):
 
 def draw_rounded_rectangle(img, top_left, bottom_right, radius, color, alpha=1.0):
     """
-    Draws a filled rounded rectangle on the image with optional transparency.
+    Draws a filled rounded rectangle with transparency.
 
     Args:
-        img (np.ndarray): The target image to draw on.
-        top_left (tuple): (x1, y1) of rectangle.
-        bottom_right (tuple): (x2, y2) of rectangle.
-        radius (int): Radius of corner circles.
-        color (tuple): Fill color in BGR (e.g., (255,255,255)).
-        alpha (float): Transparency (1.0 = solid, 0 = invisible).
-
-    Returns:
-        np.ndarray: The image with the rounded rectangle drawn.
+        img (np.ndarray): Frame to draw on.
+        top_left (tuple): Top-left corner (x1, y1).
+        bottom_right (tuple): Bottom-right corner (x2, y2).
+        radius (int): Radius for rounded corners.
+        color (tuple): Fill color in BGR.
+        alpha (float): Transparency factor (1 = opaque).
     """
     overlay = img.copy()
     x1, y1 = top_left
     x2, y2 = bottom_right
 
-    # 中間矩形
+    # Body
     cv2.rectangle(overlay, (x1 + radius, y1), (x2 - radius, y2), color, -1)
     cv2.rectangle(overlay, (x1, y1 + radius), (x2, y2 - radius), color, -1)
 
-    # 四個圓角
+    # Corners
     cv2.circle(overlay, (x1 + radius, y1 + radius), radius, color, -1)
     cv2.circle(overlay, (x2 - radius, y1 + radius), radius, color, -1)
     cv2.circle(overlay, (x1 + radius, y2 - radius), radius, color, -1)
     cv2.circle(overlay, (x2 - radius, y2 - radius), radius, color, -1)
 
-    # 套用透明度
+    # Blend overlay with original image
     cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
-
     return img

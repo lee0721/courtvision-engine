@@ -2,27 +2,26 @@ import supervision as sv
 
 class ArenaMarkDrawer:
     """
-    A drawer class responsible for drawing court keypoints on a sequence of frames.
+    This class is responsible for drawing court keypoints on video frames using Supervision.
 
     Attributes:
-        keypoint_color (str): Hex color value for the keypoints.
+        keypoint_color (str): Hex color code used to draw the keypoints.
     """
     def __init__(self):
         self.keypoint_color = "#15fc00"
 
     def draw(self, frames, arena_marks):
         """
-        Draws court keypoints on a given list of frames.
+        Draw court keypoints on each frame.
 
         Args:
-            frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
-            arena_marks (list): A corresponding list of lists where each sub-list contains
-                the (x, y) coordinates of court keypoints for that frame.
+            frames (list of ndarray): List of video frames (images).
+            arena_marks (list): A list of keypoint tensors for each frame. Each element is a tensor of (x, y) points.
 
         Returns:
-            list: A list of frames with keypoints drawn on them.
+            list: List of annotated frames with keypoints drawn.
         """
-        
+        # Create annotator for labeling keypoints
         vertex_label_annotator = sv.VertexLabelAnnotator(
             color=sv.Color.from_hex(self.keypoint_color),
             text_color=sv.Color.WHITE,
@@ -35,12 +34,14 @@ class ArenaMarkDrawer:
             annotated_frame = frame.copy()
 
             keypoints = arena_marks[index]
-            # Draw labels
-            # Convert PyTorch tensor to numpy array
+            
+            # Convert PyTorch tensor to NumPy array (in case it comes from YOLOv8 keypoints format)
             keypoints_numpy = keypoints.cpu().numpy()
+            # Annotate keypoints on the frame
             annotated_frame = vertex_label_annotator.annotate(
                 scene=annotated_frame,
-                key_points=keypoints_numpy)
+                key_points=keypoints_numpy
+            )
 
             output_frames.append(annotated_frame)
 

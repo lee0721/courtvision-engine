@@ -2,64 +2,56 @@ from .utils import draw_ellipse,draw_traingle
 
 class PlayerTracksDrawer:
     """
-    A class responsible for drawing player tracks and ball possession indicators on video frames.
+    Drawer module for rendering player tracks and ball possession indicators on each frame.
 
     Attributes:
-        default_player_team_id (int): Default team ID used when a player's team is not specified.
-        team_1_color (list): RGB color used to represent Team 1 players.
-        team_2_color (list): RGB color used to represent Team 2 players.
+        default_player_team_id (int): Default team ID assigned if not specified.
+        team_1_color (list): RGB color for Team 1 players.
+        team_2_color (list): RGB color for Team 2 players.
     """
     def __init__(self,team_1_color=[255, 245, 238],team_2_color=[128, 0, 128]):
         """
-        Initialize the PlayerTracksDrawer with specified team colors.
+        Initialize with colors for both teams.
 
         Args:
-            team_1_color (list, optional): RGB color for Team 1. Defaults to [255, 245, 238].
-            team_2_color (list, optional): RGB color for Team 2. Defaults to [128, 0, 0].
+            team_1_color (list): RGB color list for Team 1.
+            team_2_color (list): RGB color list for Team 2.
         """
         self.default_player_team_id = 1
-        self.team_1_color=team_1_color
-        self.team_2_color=team_2_color
+        self.team_1_color = team_1_color
+        self.team_2_color = team_2_color
 
     def draw(self,video_frames,tracks,player_assignment,ball_aquisition):
         """
-        Draw player tracks and ball possession indicators on a list of video frames.
+        Draw player bounding ellipses and triangle pointers for ball possession on each frame.
 
         Args:
-            video_frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
-            tracks (list): A list of dictionaries where each dictionary contains player tracking information
-                for the corresponding frame.
-            player_assignment (list): A list of dictionaries indicating team assignments for each player
-                in the corresponding frame.
-            ball_aquisition (list): A list indicating which player has possession of the ball in each frame.
+            video_frames (list): List of video frames (np.ndarray).
+            tracks (list): Per-frame dictionary {player_id: {'bbox': [x1, y1, x2, y2]}}.
+            player_assignment (list): Per-frame dictionary {player_id: team_id}.
+            ball_aquisition (list): List containing player ID with ball in each frame.
 
         Returns:
-            list: A list of frames with player tracks and ball possession indicators drawn on them.
+            list: Video frames with visualized player tracking and ball possession.
         """
-
-        output_video_frames= []
+        output_video_frames = []
         for frame_num, frame in enumerate(video_frames):
             frame = frame.copy()
 
             player_dict = tracks[frame_num]
+            assignment = player_assignment[frame_num]
+            player_id_with_ball = ball_aquisition[frame_num]
 
-            player_assignment_for_frame = player_assignment[frame_num]
-
-            player_id_has_ball = ball_aquisition[frame_num]
-
-            # Draw Players
             for track_id, player in player_dict.items():
-                team_id = player_assignment_for_frame.get(track_id,self.default_player_team_id)
+                team_id = assignment.get(track_id, self.default_player_team_id)
+                color = self.team_1_color[::-1] if team_id == 1 else self.team_2_color[::-1]
 
-                if team_id == 1:
-                    color = self.team_1_color[::-1]  # RGB to BGR
-                else:
-                    color = self.team_2_color[::-1]
+                # Draw ellipse for player bounding box
+                frame = draw_ellipse(frame, player["bbox"], color, track_id)
 
-                frame = draw_ellipse(frame, player["bbox"],color, track_id)
-
-                if track_id == player_id_has_ball:
-                    frame = draw_traingle(frame, player["bbox"],(0,0,255))
+                # Draw red triangle if player has the ball
+                if track_id == player_id_with_ball:
+                    frame = draw_traingle(frame, player["bbox"], (0, 0, 255))
 
             output_video_frames.append(frame)
 

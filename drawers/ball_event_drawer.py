@@ -4,31 +4,27 @@ import numpy as np
 
 class BallEventDrawer:
     """
-    A class responsible for calculating and drawing pass and interception statistics
-    on a sequence of video frames.
+    A drawer class responsible for displaying the total number of passes and interceptions
+    for both teams on each frame.
     """
     def __init__(self):
         pass
 
     def get_stats(self, passes, interceptions):
         """
-        Calculate the number of passes and interceptions for Team 1 and Team 2.
+        Computes the cumulative counts of passes and interceptions for both teams.
 
         Args:
-            passes (list): A list of integers representing pass events at each frame.
-                (1 represents a pass by Team 1, 2 represents a pass by Team 2, 0 represents no pass.)
-            interceptions (list): A list of integers representing interception events at each frame.
-                (1 represents an interception by Team 1, 2 represents an interception by Team 2, 0 represents no interception.)
+            passes (list of int): Frame-wise pass detection results.
+                                  (1 = Team 1 pass, 2 = Team 2 pass, -1 = no pass)
+            interceptions (list of int): Frame-wise interception detection results.
+                                  (1 = Team 1 interception, 2 = Team 2 interception, -1 = no interception)
 
         Returns:
-            tuple: A tuple of four integers (team1_pass_total, team2_pass_total,
-                team1_interception_total, team2_interception_total) indicating the total
-                number of passes and interceptions for both teams.
+            tuple: (team1_pass_total, team2_pass_total, team1_interception_total, team2_interception_total)
         """
-        team1_passes = []
-        team2_passes = []
-        team1_interceptions = []
-        team2_interceptions = []
+        team1_passes, team2_passes = [], []
+        team1_interceptions, team2_interceptions = [], []
 
         for frame_num, (pass_frame, interception_frame) in enumerate(zip(passes, interceptions)):
             if pass_frame == 1:
@@ -45,17 +41,15 @@ class BallEventDrawer:
 
     def draw(self, video_frames, passes, interceptions):
         """
-        Draw pass and interception statistics on a list of video frames.
+        Draw running pass/interception stats on each frame (excluding the first one).
 
         Args:
-            video_frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
-            passes (list): A list of integers representing pass events at each frame.
-                (1 represents a pass by Team 1, 2 represents a pass by Team 2, 0 represents no pass.)
-            interceptions (list): A list of integers representing interception events at each frame.
-                (1 represents an interception by Team 1, 2 represents an interception by Team 2, 0 represents no interception.)
+            video_frames (list of ndarray): List of original video frames.
+            passes (list of int): Pass detection results per frame.
+            interceptions (list of int): Interception detection results per frame.
 
         Returns:
-            list: A list of frames with pass and interception statistics drawn on them.
+            list: List of annotated video frames.
         """
         output_video_frames = []
         for frame_num, frame in enumerate(video_frames):
@@ -67,6 +61,18 @@ class BallEventDrawer:
         return output_video_frames
     
     def draw_frame(self, frame, frame_num, passes, interceptions):
+        """
+        Annotate a single frame with cumulative statistics of passes and interceptions.
+
+        Args:
+            frame (ndarray): The current video frame.
+            frame_num (int): Index of the frame in the video.
+            passes (list): List of detected passes up to this frame.
+            interceptions (list): List of detected interceptions up to this frame.
+
+        Returns:
+            ndarray: Annotated frame.
+        """
         frame_height, frame_width = frame.shape[:2]
         rect_width = int(frame_width * 0.25)
         rect_height = int(frame_height * 0.10)

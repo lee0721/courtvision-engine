@@ -4,106 +4,103 @@ import numpy as np
 
 class TeamBallControlDrawer:
     """
-    A class responsible for calculating and drawing team ball control statistics on video frames.
+    A drawer class responsible for calculating and visualizing team ball control statistics.
     """
     def __init__(self):
         pass
 
-    def get_team_ball_control(self,player_assignment,ball_aquisition):
+    def get_team_ball_control(self, player_assignment, ball_aquisition):
         """
-        Calculate which team has ball control for each frame.
+        Determine which team controls the ball in each frame.
 
         Args:
-            player_assignment (list): A list of dictionaries indicating team assignments for each player
-                in the corresponding frame.
-            ball_aquisition (list): A list indicating which player has possession of the ball in each frame.
+            player_assignment (list): List of dicts, each mapping player_id to team_id for a frame.
+            ball_aquisition (list): List indicating the player_id with the ball per frame (-1 if none).
 
         Returns:
-            numpy.ndarray: An array indicating which team has ball control for each frame
-                (1 for Team 1, 2 for Team 2, -1 for no control).
+            np.ndarray: Array where each element is 1 (Team 1), 2 (Team 2), or -1 (no control).
         """
+        control_array = []
 
-        team_ball_control = []
-        for player_assignment_frame,ball_aquisition_frame in zip(player_assignment,ball_aquisition):
-            if ball_aquisition_frame == -1:
-                team_ball_control.append(-1)
-                continue
-            if ball_aquisition_frame not in player_assignment_frame:
-                team_ball_control.append(-1)
-                continue
-            if player_assignment_frame[ball_aquisition_frame] == 1:
-                team_ball_control.append(1)
+        for assign, ball_player in zip(player_assignment, ball_aquisition):
+            if ball_player == -1 or ball_player not in assign:
+                control_array.append(-1)
             else:
-                team_ball_control.append(2)
+                control_array.append(assign[ball_player])
 
-        team_ball_control= np.array(team_ball_control) 
-        return team_ball_control
+        return np.array(control_array)
 
-    def draw(self,video_frames,player_assignment,ball_aquisition):
+    def draw(self, video_frames, player_assignment, ball_aquisition):
         """
-        Draw team ball control statistics on a list of video frames.
+        Draw accumulated ball control statistics on video frames.
 
         Args:
-            video_frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
-            player_assignment (list): A list of dictionaries indicating team assignments for each player
-                in the corresponding frame.
-            ball_aquisition (list): A list indicating which player has possession of the ball in each frame.
+            video_frames (list): List of video frames (np.ndarray).
+            player_assignment (list): Per-frame player_id to team_id mapping.
+            ball_aquisition (list): List of player_ids who possess the ball each frame.
 
         Returns:
-            list: A list of frames with team ball control statistics drawn on them.
+            list: Frames with overlaid ball control statistics.
         """
-        
-        team_ball_control = self.get_team_ball_control(player_assignment,ball_aquisition)
+        team_ball_control = self.get_team_ball_control(player_assignment, ball_aquisition)
 
-        output_video_frames= []
+        output_video_frames = []
         for frame_num, frame in enumerate(video_frames):
             if frame_num == 0:
                 continue
-
-            frame_drawn = self.draw_frame(frame,frame_num,team_ball_control)
+            frame_drawn = self.draw_frame(frame, frame_num, team_ball_control)
             output_video_frames.append(frame_drawn)
+
         return output_video_frames
     
     def draw_frame(self, frame, frame_num, team_ball_control):
-        frame_height, frame_width = frame.shape[:2]
-        box_width = int(frame_width * 0.20)
-        box_height = int(frame_height * 0.10)
+        """
+        Overlay the statistics box on a single frame.
+
+        Args:
+            frame (np.ndarray): Input frame.
+            frame_num (int): Current frame number.
+            team_ball_control (np.ndarray): Control array for all frames.
+
+        Returns:
+            np.ndarray: Frame with overlay.
+        """
+        h, w = frame.shape[:2]
+        box_w = int(w * 0.20)
+        box_h = int(h * 0.10)
         margin = 30
 
-        rect_x2 = frame_width - margin - 400
-        rect_x1 = rect_x2 - box_width
-        rect_y2 = frame_height - margin
-        rect_y1 = rect_y2 - box_height
+        x2 = w - margin - 400
+        x1 = x2 - box_w
+        y2 = h - margin
+        y1 = y2 - box_h
 
-        draw_rounded_rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), radius=20, color=(255, 255, 255), alpha=0.6)
+        draw_rounded_rectangle(frame, (x1, y1), (x2, y2), radius=20, color=(255, 255, 255), alpha=0.6)
 
-        font_scale = box_height / 150
+        font_scale = box_h / 150
         font_thickness = max(1, int(font_scale * 2))
 
-        team_ball_control_till_frame = team_ball_control[:frame_num + 1]
-        team_1_num_frames = np.sum(team_ball_control_till_frame == 1)
-        team_2_num_frames = np.sum(team_ball_control_till_frame == 2)
-        total_frames = len(team_ball_control_till_frame)
-        team_1 = team_1_num_frames / total_frames
-        team_2 = team_2_num_frames / total_frames
+        control_so_far = team_ball_control[:frame_num + 1]
+        team_1_ratio = np.sum(control_so_far == 1) / len(control_so_far)
+        team_2_ratio = np.sum(control_so_far == 2) / len(control_so_far)
 
-        text1 = f"Team 1 Ball Control: {team_1 * 100:.2f}%"
-        text2 = f"Team 2 Ball Control: {team_2 * 100:.2f}%"
+        text1 = f"Team 1 Ball Control: {team_1_ratio * 100:.2f}%"
+        text2 = f"Team 2 Ball Control: {team_2_ratio * 100:.2f}%"
 
-        (text_width1, text_height1), _ = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
-        (text_width2, text_height2), _ = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
+        (w1, h1), _ = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
+        (w2, h2), _ = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
 
-        center_x = (rect_x1 + rect_x2) // 2
-        center_y = (rect_y1 + rect_y2) // 2
+        center_x = (x1 + x2) // 2
+        center_y = (y1 + y2) // 2
         spacing = 10
 
-        text_y1 = center_y - spacing
-        text_y2 = center_y + text_height2 + spacing
+        y_text1 = center_y - spacing
+        y_text2 = center_y + h2 + spacing
 
-        text_x1 = center_x - text_width1 // 2
-        text_x2 = center_x - text_width2 // 2
+        x_text1 = center_x - w1 // 2
+        x_text2 = center_x - w2 // 2
 
-        cv2.putText(frame, text1, (text_x1, text_y1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
-        cv2.putText(frame, text2, (text_x2, text_y2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
+        cv2.putText(frame, text1, (x_text1, y_text1), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
+        cv2.putText(frame, text2, (x_text2, y_text2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), font_thickness)
 
         return frame

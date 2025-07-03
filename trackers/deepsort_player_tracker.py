@@ -13,28 +13,29 @@ class DeepSortPlayerTracker:
     This class combines YOLO object detection with DeepSORT tracking to maintain consistent
     player identities across frames, processing detections in batches.
     """
+
     def __init__(self, model_path, max_age=30, n_init=3, nn_budget=100):
         """
         Initialize the DeepSortPlayerTracker with YOLO model and DeepSORT tracker.
 
         Args:
             model_path (str): Path to the YOLO model weights.
-            max_age (int): Maximum number of frames a track can remain inactive before deletion.
-            n_init (int): Number of consecutive detections required to confirm a track.
-            nn_budget (int): Maximum size of the appearance descriptor gallery.
+            max_age (int): Max frames to keep a track without updates.
+            n_init (int): Number of detections before confirming a track.
+            nn_budget (int): Size of appearance feature buffer.
         """
         self.model = YOLO(model_path)
         self.tracker = DeepSort(max_age=max_age, n_init=n_init, nn_budget=nn_budget)
 
     def detect_frames(self, frames):
         """
-        Detect players in a sequence of frames using batch processing.
+        Detect players in batches of video frames using YOLO.
 
         Args:
-            frames (list): List of video frames to process.
+            frames (list): List of video frames.
 
         Returns:
-            list: YOLO detection results for each frame.
+            list: Detection results for each frame.
         """
         batch_size = 20
         detections = []
@@ -45,21 +46,19 @@ class DeepSortPlayerTracker:
 
     def get_object_tracks(self, frames, read_from_stub=False, stub_path=None):
         """
-        Obtain player tracking results for a sequence of frames with optional caching.
+        Run tracking on input video frames and return consistent player IDs per frame.
 
         Args:
-            frames (list): List of video frames to process.
-            read_from_stub (bool): Whether to attempt reading cached results.
-            stub_path (str): Path to the cache file.
+            frames (list): List of video frames to track.
+            read_from_stub (bool): Whether to load existing tracking results from cache.
+            stub_path (str): Path to the stub file for caching.
 
         Returns:
-            list: List of dictionaries containing player tracking information for each frame,
-                  where each dictionary maps player IDs to their bounding box coordinates.
+            list: Per-frame list of tracked player IDs and their bounding boxes.
         """
         tracks = read_stub(read_from_stub, stub_path)
-        if tracks is not None:
-            if len(tracks) == len(frames):
-                return tracks
+        if tracks is not None and len(tracks) == len(frames):
+            return tracks
 
         detections = self.detect_frames(frames)
         tracks = []
@@ -69,7 +68,7 @@ class DeepSortPlayerTracker:
             cls_names_inv = {v: k for k, v in cls_names.items()}
             detection_supervision = sv.Detections.from_ultralytics(detection)
 
-            # Convert detections to DeepSORT format: [[x, y, w, h], conf, class_id]
+            # Convert detections to DeepSORT expected format
             deepsort_detections = []
             for det in detection_supervision:
                 bbox = det[0]  # [x1, y1, x2, y2]
@@ -81,7 +80,7 @@ class DeepSortPlayerTracker:
                     h = y2 - y1
                     deepsort_detections.append(([x1, y1, w, h], conf, cls_id))
 
-            # Update tracker
+            # DeepSORT tracking update
             tracked_objects = self.tracker.update_tracks(deepsort_detections, frame=frames[frame_num])
 
             tracks.append({})
@@ -89,7 +88,7 @@ class DeepSortPlayerTracker:
                 if not track.is_confirmed():
                     continue
                 track_id = track.track_id
-                bbox = track.to_tlbr()  # [x1, y1, x2, y2]
+                bbox = track.to_tlbr()  # returns [x1, y1, x2, y2]
                 if cls_names[track.det_class] == 'Player':
                     tracks[frame_num][track_id] = {"bbox": bbox.tolist()}
 

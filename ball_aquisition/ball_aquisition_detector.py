@@ -4,25 +4,23 @@ from utils.bbox_utils import measure_distance, get_center_of_bbox
 
 class BallAquisitionDetector:
     """
-    Detects ball acquisition by players in a basketball game.
+    Detects ball acquisition (possession) by players in a basketball game.
 
     This class determines which player is most likely in possession of the ball
-    by analyzing bounding boxes for both the ball and the players. It combines
-    distance measurements between the ball and key points of each player's bounding
-    box with containment ratios of the ball within a player's bounding box.
+    based on bounding boxes of both the ball and players. It uses a combination of 
+    spatial proximity and bounding box containment heuristics.
     """
 
     def __init__(self):
         """
-        Initialize the BallAquisitionDetector with default thresholds.
+        Initialize thresholds and parameters for possession detection.
 
         Attributes:
-            possession_threshold (int): Maximum distance (in pixels) at which
-                a player can be considered to have the ball if containment is insufficient.
-            min_frames (int): Minimum number of consecutive frames required for a player
-                to be considered in possession of the ball.
-            containment_threshold (float): Containment ratio above which a player
-                is considered to hold the ball without requiring distance checking.
+            possession_threshold (int): Max distance (in pixels) between player and ball 
+                for possible possession.
+            min_frames (int): Minimum number of consecutive frames required to confirm possession.
+            containment_threshold (float): Threshold for how much of the ball must be inside 
+                a player’s bbox to be considered possessed.
         """
         self.possession_threshold = 50
         self.min_frames = 11
@@ -30,34 +28,28 @@ class BallAquisitionDetector:
         
     def get_key_basketball_player_assignment_points(self, player_bbox,ball_center):
         """
-        Compute a list of key points around a player's bounding box.
-
-        Key points are used to measure distance to the ball more accurately than
-        using just the center of the bounding box.
+        Generate key anchor points around a player's bounding box for distance checks.
 
         Args:
-            bbox (tuple or list): A bounding box in the format (x1, y1, x2, y2).
+            player_bbox (tuple): (x1, y1, x2, y2) bounding box of a player.
+            ball_center (tuple): (x, y) center point of the ball.
 
         Returns:
-            list of tuple: A list of (x, y) coordinates representing key points
-            around the bounding box.
+            list of tuple: Key spatial points (x, y) around the bbox.
         """
-        ball_center_x = ball_center[0]
-        ball_center_y = ball_center[1]
-
+        ball_center_x, ball_center_y = ball_center
         x1, y1, x2, y2 = player_bbox
-        width = x2 - x1
-        height = y2 - y1
+        width, height = x2 - x1, y2 - y1
 
         output_points = []    
-        if ball_center_y > y1 and ball_center_y < y2:
-            output_points.append((x1, ball_center_y))
-            output_points.append((x2, ball_center_y))
+        
+        # Horizontal or vertical alignment with ball
+        if y1 < ball_center_y < y2:
+            output_points += [(x1, ball_center_y), (x2, ball_center_y)]
+        if x1 < ball_center_x < x2:
+            output_points += [(ball_center_x, y1), (ball_center_x, y2)]
 
-        if ball_center_x > x1 and ball_center_x < x2:
-            output_points.append((ball_center_x, y1))
-            output_points.append((ball_center_x, y2))
-
+        # Additional surrounding key points
         output_points += [
             (x1 + width//2, y1),          # top center
             (x2, y1),                      # top right
@@ -74,22 +66,19 @@ class BallAquisitionDetector:
     
     def calculate_ball_containment_ratio(self, player_bbox, ball_bbox):
         """
-        Calculate how much of the ball is contained within a player's bounding box.
-
-        This is computed as the ratio of the intersection of the bounding boxes
-        to the area of the ball's bounding box.
+        Compute the overlap ratio between ball and player bbox.
 
         Args:
-            player_bbox (tuple or list): The player's bounding box (x1, y1, x2, y2).
-            ball_bbox (tuple or list): The ball's bounding box (x1, y1, x2, y2).
+            player_bbox (tuple): (x1, y1, x2, y2)
+            ball_bbox (tuple): (x1, y1, x2, y2)
 
         Returns:
-            float: A value between 0.0 and 1.0 indicating what fraction of the
-            ball is inside the player's bounding box.
+            float: Ratio of the ball bbox area inside the player bbox (0~1).
         """
         px1, py1, px2, py2 = player_bbox
         bx1, by1, bx2, by2 = ball_bbox
         
+        # Compute overlap area
         intersection_x1 = max(px1, bx1)
         intersection_y1 = max(py1, by1)
         intersection_x2 = min(px2, bx2)
@@ -105,36 +94,29 @@ class BallAquisitionDetector:
     
     def find_minimum_distance_to_ball(self, ball_center, player_bbox):
         """
-        Compute the minimum distance from any key point on a player's bounding box
-        to the center of the ball.
+        Get the closest distance from ball to key points on player's bbox.
 
         Args:
-            ball_center (tuple): (x, y) coordinates of the center of the ball.
-            player_bbox (tuple): A bounding box (x1, y1, x2, y2) for the player.
+            ball_center (tuple): (x, y)
+            player_bbox (tuple): (x1, y1, x2, y2)
 
         Returns:
-            float: The smallest distance from the ball center to
-            any key point on the player's bounding box.
+            float: Closest Euclidean distance (in pixels).
         """
         key_points = self.get_key_basketball_player_assignment_points(player_bbox,ball_center)
         return min(measure_distance(ball_center, point) for point in key_points)
     
     def find_best_candidate_for_possession(self, ball_center, player_tracks_frame, ball_bbox):
         """
-        Determine which player in a single frame is most likely to have the ball.
-
-        Players who have a high containment ratio of the ball are prioritized.
-        If no player has a high containment ratio, the player with the smallest
-        distance to the ball that is below the possession threshold is selected.
+        Determine which player (if any) is most likely to possess the ball.
 
         Args:
-            ball_center (tuple): (x, y) coordinates of the ball center.
-            player_tracks_frame (dict): Mapping from player_id to info about that player,
-                including a 'bbox' key with (x1, y1, x2, y2).
-            ball_bbox (tuple): Bounding box for the ball (x1, y1, x2, y2).
+            ball_center (tuple): (x, y)
+            player_tracks_frame (dict): player_id → {'bbox': (x1, y1, x2, y2)}
+            ball_bbox (tuple): Ball bounding box
 
         Returns:
-            int: (best_player_id), or (-1 ) if none found.
+            int: player_id with best evidence of possession, or -1 if no valid candidate.
         """
         high_containment_players = []
         regular_distance_players = []
@@ -167,22 +149,14 @@ class BallAquisitionDetector:
     
     def detect_ball_possession(self, player_tracks, ball_tracks):
         """
-        Detect which player has the ball in each frame based on bounding box information.
-
-        Loops through all frames, looks up ball bounding boxes and player bounding boxes,
-        and uses find_best_candidate_for_possession to determine who has the ball.
-        Requires a player to hold possession for at least min_frames consecutive frames
-        before confirming possession.
+        Detect ball possession for each frame based on player and ball tracks.
 
         Args:
-            player_tracks (list): A list of dictionaries for each frame, where each dictionary
-                maps player_id to player information including 'bbox'.
-            ball_tracks (list): A list of dictionaries for each frame, where each dictionary
-                maps ball_id to ball information including 'bbox'.
+            player_tracks (list): List of dicts per frame: player_id → info with 'bbox'
+            ball_tracks (list): List of dicts per frame: ball_id → info with 'bbox'
 
         Returns:
-            list: A list of length num_frames with the player_id who has possession,
-            or -1 if no one is determined to have possession in that frame.
+            list: One player_id per frame (or -1 if undetermined).
         """
         num_frames = len(ball_tracks)
         possession_list = [-1] * num_frames

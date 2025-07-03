@@ -19,10 +19,7 @@ class TeamClassifier:
         team_1_class_name (str): Description of Team 1's jersey appearance.
         team_2_class_name (str): Description of Team 2's jersey appearance.
     """
-    def __init__(self,
-                 team_1_class_name,
-                 team_2_class_name,
-                 ):
+    def __init__(self, team_1_class_name, team_2_class_name):
         """
         Initialize the TeamClassifier with specified team jersey descriptions.
 
@@ -30,8 +27,7 @@ class TeamClassifier:
             team_1_class_name (str): Description of Team 1's jersey appearance.
             team_2_class_name (str): Description of Team 2's jersey appearance.
         """
-        self.team_colors = {}      
-    
+        self.team_colors = {}
         self.team_1_class_name = team_1_class_name
         self.team_2_class_name = team_2_class_name
         
@@ -48,23 +44,24 @@ class TeamClassifier:
 
         self.team_1_color_rgb = self.color_name_to_rgb.get(self.team_1_class_name, [255, 255, 255])
         self.team_2_color_rgb = self.color_name_to_rgb.get(self.team_2_class_name, [0, 0, 139])
-        
-        # Load CLIP model once
+
+        # Load CLIP model for visual classification
         self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
         self.processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
 
+        # Used to cache per-player classification
         self.player_team_dict = {}
 
     def get_player_color(self, frame, bbox):
         """
-        Analyzes the jersey color of a player within the given bounding box.
+        Analyzes the jersey color of a player within the given bounding box using CLIP.
 
         Args:
             frame (numpy.ndarray): The video frame containing the player.
             bbox (tuple): Bounding box coordinates of the player.
 
         Returns:
-            str: The classified jersey color/description.
+            str: The predicted jersey description/class (e.g., "red shirt").
         """
         h, w, _ = frame.shape
         x1 = max(0, int(bbox[0]))
@@ -73,83 +70,73 @@ class TeamClassifier:
         y2 = min(h, int(bbox[3]))
 
         if x2 <= x1 or y2 <= y1:
-            return self.team_2_class_name  # fallback default
+            return self.team_2_class_name  # fallback to team 2
 
         image = frame[y1:y2, x1:x2]
 
         if image is None or image.size == 0:
-            return self.team_2_class_name  # fallback default
+            return self.team_2_class_name  # fallback to team 2
 
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         pil_image = Image.fromarray(rgb_image)
-        image = pil_image
 
         classes = [self.team_1_class_name, self.team_2_class_name]
-
-        inputs = self.processor(text=classes, images=image, return_tensors="pt", padding=True)
+        inputs = self.processor(text=classes, images=pil_image, return_tensors="pt", padding=True)
         outputs = self.model(**inputs)
-        logits_per_image = outputs.logits_per_image
-        probs = logits_per_image.softmax(dim=1)
+        probs = outputs.logits_per_image.softmax(dim=1)
 
-        class_name = classes[probs.argmax(dim=1)[0]]
-        return class_name
+        predicted_class = classes[probs.argmax(dim=1)[0]]
+        return predicted_class
 
-    def get_player_team(self,frame,player_bbox,player_id):
+    def get_player_team(self, frame, player_bbox, player_id):
         """
-        Gets the team assignment for a player, using cached results if available.
+        Gets the team assignment for a player, using cached result if available.
 
         Args:
-            frame (numpy.ndarray): The video frame containing the player.
-            player_bbox (tuple): Bounding box coordinates of the player.
-            player_id (int): Unique identifier for the player.
+            frame (numpy.ndarray): The video frame.
+            player_bbox (tuple): Bounding box of the player.
+            player_id (int): Player's unique ID.
 
         Returns:
-            int: Team ID (1 or 2) assigned to the player.
+            int: Team ID (1 or 2).
         """
         if player_id in self.player_team_dict:
-          return self.player_team_dict[player_id]
+            return self.player_team_dict[player_id]
 
-        player_color = self.get_player_color(frame,player_bbox)
+        predicted_class = self.get_player_color(frame, player_bbox)
 
-        team_id=2
-        if player_color==self.team_1_class_name:
-            team_id=1
-
+        team_id = 1 if predicted_class == self.team_1_class_name else 2
         self.player_team_dict[player_id] = team_id
         return team_id
 
-    def get_player_teams_across_frames(self,video_frames,player_tracks,read_from_stub=False, stub_path=None):
+    def get_player_teams_across_frames(self, video_frames, player_tracks, read_from_stub=False, stub_path=None):
         """
-        Processes all video frames to assign teams to players, with optional caching.
+        Assigns teams to all players across all frames, with optional caching via stub.
 
         Args:
-            video_frames (list): List of video frames to process.
-            player_tracks (list): List of player tracking information for each frame.
-            read_from_stub (bool): Whether to attempt reading cached results.
-            stub_path (str): Path to the cache file.
+            video_frames (list): List of video frames.
+            player_tracks (list): List of dicts with player bboxes per frame.
+            read_from_stub (bool): Whether to load cached assignments.
+            stub_path (str): File path to save/load stub.
 
         Returns:
-            list: List of dictionaries mapping player IDs to team assignments for each frame.
+            list: A list where each entry is a dict mapping player IDs to team IDs for that frame.
         """
-        
-        player_assignment = read_stub(read_from_stub,stub_path)
-        if player_assignment is not None:
-            if len(player_assignment) == len(video_frames):
-                return player_assignment
+        player_assignment = read_stub(read_from_stub, stub_path)
+        if player_assignment is not None and len(player_assignment) == len(video_frames):
+            return player_assignment
 
-        player_assignment=[]
-        for frame_num, player_track in enumerate(player_tracks):        
+        player_assignment = []
+        for frame_num, player_track in enumerate(player_tracks):
             player_assignment.append({})
-            
-            if frame_num %50 ==0:
+
+            # Clear cache periodically to adapt to player reentry
+            if frame_num % 50 == 0:
                 self.player_team_dict = {}
 
             for player_id, track in player_track.items():
-                team = self.get_player_team(video_frames[frame_num],   
-                                                    track['bbox'],
-                                                    player_id)
+                team = self.get_player_team(video_frames[frame_num], track['bbox'], player_id)
                 player_assignment[frame_num][player_id] = team
-        
-        save_stub(stub_path,player_assignment)
 
+        save_stub(stub_path, player_assignment)
         return player_assignment
