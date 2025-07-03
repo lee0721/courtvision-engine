@@ -1,6 +1,6 @@
 import cv2
 
-class SpeedAndDistanceDrawer():
+class TrajectoryKineticsDrawer():
     def __init__(self):
         pass 
     def draw(self, video_frames,player_tracks,player_distances_per_frame,player_speed_per_frame):

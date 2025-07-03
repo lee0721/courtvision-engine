@@ -2,7 +2,7 @@ from .utils import draw_rounded_rectangle
 import cv2
 import numpy as np
 
-class PassInterceptionDrawer:
+class BallEventDrawer:
     """
     A class responsible for calculating and drawing pass and interception statistics
     on a sequence of video frames.

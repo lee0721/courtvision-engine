@@ -4,9 +4,9 @@ from trackers import DeepSortPlayerTracker, BallTracker, PlayerTracker
 from team_classifier import TeamClassifier
 from arena_mark_detector import ArenaMarkDetector
 from ball_aquisition import BallAquisitionDetector
-from pass_and_interception_detector import PassAndInterceptionDetector
-from tactical_view_converter import TacticalViewConverter
-from speed_and_distance_calculator import SpeedAndDistanceCalculator
+from ball_event_detector import BallEventDetector
+from perspective_transformer import PerspectiveTransformer
+from trajectory_kinetics_analyzer import TrajectoryKineticsAnalyzer
 from action_recognition import ActionRecognitionModel 
 from drawers import (
     PlayerTracksDrawer, 
@@ -14,9 +14,9 @@ from drawers import (
     ArenaMarkDrawer,
     TeamBallControlDrawer,
     FrameNumberDrawer,
-    PassInterceptionDrawer,
-    TacticalViewDrawer,
-    SpeedAndDistanceDrawer,
+    BallEventDrawer,
+    PerspectiveOverlayDrawer,
+    TrajectoryKineticsDrawer,
     ActionRecognitionDrawer 
 )
 from configs import(
@@ -90,27 +90,27 @@ class VideoAnalysis:
         ball_aquisition = ball_aquisition_detector.detect_ball_possession(player_tracks,ball_tracks)
 
         # Detect Passes
-        pass_and_interception_detector = PassAndInterceptionDetector()
-        passes = pass_and_interception_detector.detect_passes(ball_aquisition,player_assignment)
-        interceptions = pass_and_interception_detector.detect_interceptions(ball_aquisition,player_assignment)
+        ball_event_detector = BallEventDetector()
+        passes = ball_event_detector.detect_passes(ball_aquisition,player_assignment)
+        interceptions = ball_event_detector.detect_interceptions(ball_aquisition,player_assignment)
 
         # Tactical View
-        tactical_view_converter = TacticalViewConverter(
+        perspective_transformer = PerspectiveTransformer(
             court_image_path="./images/basketball_court.png"
         )
 
-        arena_marks_per_frame = tactical_view_converter.validate_keypoints(arena_marks_per_frame)
-        tactical_player_positions = tactical_view_converter.transform_players_to_tactical_view(arena_marks_per_frame,player_tracks)
+        arena_marks_per_frame = perspective_transformer.validate_keypoints(arena_marks_per_frame)
+        tactical_player_positions = perspective_transformer.transform_players_to_tactical_view(arena_marks_per_frame,player_tracks)
 
         # Speed and Distance Calculator
-        speed_and_distance_calculator = SpeedAndDistanceCalculator(
-            tactical_view_converter.width,
-            tactical_view_converter.height,
-            tactical_view_converter.actual_width_in_meters,
-            tactical_view_converter.actual_height_in_meters
+        trajectory_kinetics_analyzer = TrajectoryKineticsAnalyzer(
+            perspective_transformer.width,
+            perspective_transformer.height,
+            perspective_transformer.actual_width_in_meters,
+            perspective_transformer.actual_height_in_meters
         )
-        player_distances_per_frame = speed_and_distance_calculator.calculate_distance(tactical_player_positions)
-        player_speed_per_frame = speed_and_distance_calculator.calculate_speed(player_distances_per_frame)
+        player_distances_per_frame = trajectory_kinetics_analyzer.calculate_distance(tactical_player_positions)
+        player_speed_per_frame = trajectory_kinetics_analyzer.calculate_speed(player_distances_per_frame)
         
         # Run Action Recognition
         action_predictions = action_recognition_model.predict(video_frames, player_tracks, read_from_stub=True, 
@@ -118,7 +118,6 @@ class VideoAnalysis:
         
         # Draw output   
         # Initialize Drawers
-        # 改成這樣，把 team_classifier 偵測的顏色直接傳進去
         player_tracks_drawer = PlayerTracksDrawer(
             team_1_color=team_classifier.team_1_color_rgb,
             team_2_color=team_classifier.team_2_color_rgb
@@ -127,12 +126,12 @@ class VideoAnalysis:
         arena_mark_drawer = ArenaMarkDrawer()
         team_ball_control_drawer = TeamBallControlDrawer()
         frame_number_drawer = FrameNumberDrawer()
-        pass_and_interceptions_drawer = PassInterceptionDrawer()
-        tactical_view_drawer = TacticalViewDrawer(
+        ball_event_drawer = BallEventDrawer()
+        perspective_drawer = PerspectiveOverlayDrawer(
             team_1_color=team_classifier.team_1_color_rgb,
             team_2_color=team_classifier.team_2_color_rgb
         )
-        speed_and_distance_drawer = SpeedAndDistanceDrawer()
+        trajectory_kinetics_drawer = TrajectoryKineticsDrawer()
         # Initialize ActionRecognitionDrawer and set predictions
         action_recognition_drawer = ActionRecognitionDrawer()
         action_recognition_drawer.set_predictions(action_predictions)  # Set predictions here
@@ -157,23 +156,23 @@ class VideoAnalysis:
                                                             ball_aquisition)
         
         # Draw Passes and Interceptions
-        output_video_frames = pass_and_interceptions_drawer.draw(output_video_frames,
+        output_video_frames = ball_event_drawer.draw(output_video_frames,
                                                                 passes,
                                                                 interceptions)
         
         # Speed and Distance Drawer
-        output_video_frames = speed_and_distance_drawer.draw(output_video_frames,
+        output_video_frames = trajectory_kinetics_drawer.draw(output_video_frames,
                                                             player_tracks,
                                                             player_distances_per_frame,
                                                             player_speed_per_frame
                                                             )
         
         ## Draw Tactical View
-        output_video_frames = tactical_view_drawer.draw(output_video_frames,
-                                                        tactical_view_converter.court_image_path,
-                                                        tactical_view_converter.width,
-                                                        tactical_view_converter.height,
-                                                        tactical_view_converter.key_points,
+        output_video_frames = perspective_drawer.draw(output_video_frames,
+                                                        perspective_transformer.court_image_path,
+                                                        perspective_transformer.width,
+                                                        perspective_transformer.height,
+                                                        perspective_transformer.key_points,
                                                         tactical_player_positions,
                                                         player_assignment,
                                                         ball_aquisition,

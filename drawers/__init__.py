@@ -3,7 +3,7 @@ from .ball_tracks_drawer import BallTracksDrawer
 from .arena_mark_drawer import ArenaMarkDrawer
 from .team_ball_control_drawer import TeamBallControlDrawer
 from .frame_number_drawer import FrameNumberDrawer
-from .pass_and_interceptions_drawer import PassInterceptionDrawer
-from .tactical_view_drawer import TacticalViewDrawer
-from .speed_and_distance_drawer import SpeedAndDistanceDrawer
+from .ball_event_drawer import BallEventDrawer
+from .perspective_overlay_drawer import PerspectiveOverlayDrawer
+from .trajectory_kinetics_drawer import TrajectoryKineticsDrawer
 from .action_recognition_drawer import ActionRecognitionDrawer

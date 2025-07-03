@@ -1,6 +1,6 @@
 import cv2 
 
-class TacticalViewDrawer:
+class PerspectiveOverlayDrawer:
     def __init__(self, team_1_color=[255, 245, 238], team_2_color=[128, 0, 0]):
         self.start_x = 130
         self.start_y = 120

@@ -6,7 +6,7 @@ sys.path.append(os.path.join(folder_path,"../"))
 from utils import measure_distance
 
 
-class SpeedAndDistanceCalculator():
+class TrajectoryKineticsAnalyzer():
     def __init__(self, 
                  width_in_pixels,
                  height_in_pixels,

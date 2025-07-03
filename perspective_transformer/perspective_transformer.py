@@ -10,7 +10,7 @@ folder_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(folder_path,"../"))
 from utils import get_foot_position,measure_distance
 
-class TacticalViewConverter:
+class PerspectiveTransformer:
     def __init__(self, court_image_path):
         self.court_image_path = court_image_path
         self.width = 300
