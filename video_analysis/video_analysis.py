@@ -2,7 +2,7 @@ import os
 from utils import read_video, save_video
 from trackers import DeepSortPlayerTracker, BallTracker, PlayerTracker
 from team_assigner import TeamAssigner
-from court_keypoint_detector import CourtKeypointDetector
+from arena_mark_detector import ArenaMarkDetector
 from ball_aquisition import BallAquisitionDetector
 from pass_and_interception_detector import PassAndInterceptionDetector
 from tactical_view_converter import TacticalViewConverter
@@ -11,7 +11,7 @@ from action_recognition import ActionRecognitionModel
 from drawers import (
     PlayerTracksDrawer, 
     BallTracksDrawer,
-    CourtKeypointDrawer,
+    ArenaMarkDrawer,
     TeamBallControlDrawer,
     FrameNumberDrawer,
     PassInterceptionDrawer,
@@ -42,7 +42,7 @@ class VideoAnalysis:
         ball_tracker = BallTracker(BALL_DETECTOR_PATH)
 
         ## Initialize Keypoint Detector
-        court_keypoint_detector = CourtKeypointDetector(COURT_KEYPOINT_DETECTOR_PATH)
+        mark_detector = ArenaMarkDetector(COURT_KEYPOINT_DETECTOR_PATH)
 
         # Initialize Action Recognition Model
         action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH) 
@@ -64,7 +64,7 @@ class VideoAnalysis:
                                                     stub_path=os.path.join(self.stub_path, 'ball_track_stubs.pkl')
                                                     )
         ## Run KeyPoint Extractor
-        court_keypoints_per_frame = court_keypoint_detector.get_court_keypoints(video_frames,
+        arena_marks_per_frame = mark_detector.extract_marks(video_frames,
                                                                         read_from_stub=True,
                                                                         stub_path=os.path.join(self.stub_path, 'court_key_points_stub.pkl')
                                                                         )
@@ -97,8 +97,8 @@ class VideoAnalysis:
             court_image_path="./images/basketball_court.png"
         )
 
-        court_keypoints_per_frame = tactical_view_converter.validate_keypoints(court_keypoints_per_frame)
-        tactical_player_positions = tactical_view_converter.transform_players_to_tactical_view(court_keypoints_per_frame,player_tracks)
+        arena_marks_per_frame = tactical_view_converter.validate_keypoints(arena_marks_per_frame)
+        tactical_player_positions = tactical_view_converter.transform_players_to_tactical_view(arena_marks_per_frame,player_tracks)
 
         # Speed and Distance Calculator
         speed_and_distance_calculator = SpeedAndDistanceCalculator(
@@ -122,7 +122,7 @@ class VideoAnalysis:
             team_2_color=team_assigner.team_2_color_rgb
         )
         ball_tracks_drawer = BallTracksDrawer()
-        court_keypoint_drawer = CourtKeypointDrawer()
+        arena_mark_drawer = ArenaMarkDrawer()
         team_ball_control_drawer = TeamBallControlDrawer()
         frame_number_drawer = FrameNumberDrawer()
         pass_and_interceptions_drawer = PassInterceptionDrawer()
@@ -144,7 +144,7 @@ class VideoAnalysis:
         output_video_frames = ball_tracks_drawer.draw(output_video_frames, ball_tracks)
 
         ## Draw KeyPoints
-        output_video_frames = court_keypoint_drawer.draw(output_video_frames, court_keypoints_per_frame)
+        output_video_frames = arena_mark_drawer.draw(output_video_frames, arena_marks_per_frame)
 
         ## Draw Frame Number
         output_video_frames = frame_number_drawer.draw(output_video_frames)

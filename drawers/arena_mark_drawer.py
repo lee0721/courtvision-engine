@@ -1,6 +1,6 @@
 import supervision as sv
 
-class CourtKeypointDrawer:
+class ArenaMarkDrawer:
     """
     A drawer class responsible for drawing court keypoints on a sequence of frames.
 
@@ -10,13 +10,13 @@ class CourtKeypointDrawer:
     def __init__(self):
         self.keypoint_color = "#15fc00"
 
-    def draw(self, frames, court_keypoints):
+    def draw(self, frames, arena_marks):
         """
         Draws court keypoints on a given list of frames.
 
         Args:
             frames (list): A list of frames (as NumPy arrays or image objects) on which to draw.
-            court_keypoints (list): A corresponding list of lists where each sub-list contains
+            arena_marks (list): A corresponding list of lists where each sub-list contains
                 the (x, y) coordinates of court keypoints for that frame.
 
         Returns:
@@ -34,7 +34,7 @@ class CourtKeypointDrawer:
         for index,frame in enumerate(frames):
             annotated_frame = frame.copy()
 
-            keypoints = court_keypoints[index]
+            keypoints = arena_marks[index]
             # Draw labels
             # Convert PyTorch tensor to numpy array
             keypoints_numpy = keypoints.cpu().numpy()
