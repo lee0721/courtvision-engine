@@ -34,7 +34,7 @@ class VideoAnalysis:
 
     def run(self):
         # Read Video
-        video_frames = read_video(self.input_video)
+        video_frames = read_video(self.input_path)
         
         ## Initialize Tracker
         #player_tracker = DeepSortPlayerTracker(PLAYER_DETECTOR_PATH)
