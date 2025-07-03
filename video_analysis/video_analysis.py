@@ -1,7 +1,7 @@
 import os
 from utils import read_video, save_video
 from trackers import DeepSortPlayerTracker, BallTracker, PlayerTracker
-from team_assigner import TeamAssigner
+from team_classifier import TeamClassifier
 from arena_mark_detector import ArenaMarkDetector
 from ball_aquisition import BallAquisitionDetector
 from pass_and_interception_detector import PassAndInterceptionDetector
@@ -22,8 +22,10 @@ from drawers import (
 from configs import(
     PLAYER_DETECTOR_PATH,
     BALL_DETECTOR_PATH,
-    COURT_KEYPOINT_DETECTOR_PATH,
-    ACTION_RECOGNITION_MODEL_PATH
+    ARENA_MARK_DETECTOR_PATH,
+    ACTION_RECOGNITION_MODEL_PATH,
+    TEAM_1_CLASS_NAME, 
+    TEAM_2_CLASS_NAME
 )
 
 class VideoAnalysis:
@@ -42,7 +44,7 @@ class VideoAnalysis:
         ball_tracker = BallTracker(BALL_DETECTOR_PATH)
 
         ## Initialize Keypoint Detector
-        mark_detector = ArenaMarkDetector(COURT_KEYPOINT_DETECTOR_PATH)
+        mark_detector = ArenaMarkDetector(ARENA_MARK_DETECTOR_PATH)
 
         # Initialize Action Recognition Model
         action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH) 
@@ -76,8 +78,8 @@ class VideoAnalysis:
     
 
         # Assign Player Teams
-        team_assigner = TeamAssigner()
-        player_assignment = team_assigner.get_player_teams_across_frames(video_frames,
+        team_classifier = TeamClassifier( team_1_class_name=TEAM_1_CLASS_NAME, team_2_class_name=TEAM_2_CLASS_NAME)
+        player_assignment = team_classifier.get_player_teams_across_frames(video_frames,
                                                                         player_tracks,
                                                                         read_from_stub=True,
                                                                         stub_path=os.path.join(self.stub_path, 'player_assignment_stub.pkl')
@@ -116,10 +118,10 @@ class VideoAnalysis:
         
         # Draw output   
         # Initialize Drawers
-        # 改成這樣，把 team_assigner 偵測的顏色直接傳進去
+        # 改成這樣，把 team_classifier 偵測的顏色直接傳進去
         player_tracks_drawer = PlayerTracksDrawer(
-            team_1_color=team_assigner.team_1_color_rgb,
-            team_2_color=team_assigner.team_2_color_rgb
+            team_1_color=team_classifier.team_1_color_rgb,
+            team_2_color=team_classifier.team_2_color_rgb
         )
         ball_tracks_drawer = BallTracksDrawer()
         arena_mark_drawer = ArenaMarkDrawer()
@@ -127,8 +129,8 @@ class VideoAnalysis:
         frame_number_drawer = FrameNumberDrawer()
         pass_and_interceptions_drawer = PassInterceptionDrawer()
         tactical_view_drawer = TacticalViewDrawer(
-            team_1_color=team_assigner.team_1_color_rgb,
-            team_2_color=team_assigner.team_2_color_rgb
+            team_1_color=team_classifier.team_1_color_rgb,
+            team_2_color=team_classifier.team_2_color_rgb
         )
         speed_and_distance_drawer = SpeedAndDistanceDrawer()
         # Initialize ActionRecognitionDrawer and set predictions

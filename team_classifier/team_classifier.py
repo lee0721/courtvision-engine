@@ -6,7 +6,7 @@ import sys
 sys.path.append('../')
 from utils import read_stub, save_stub
 
-class TeamAssigner:
+class TeamClassifier:
     """
     A class that assigns players to teams based on their jersey colors using visual analysis.
 
@@ -20,18 +20,17 @@ class TeamAssigner:
         team_2_class_name (str): Description of Team 2's jersey appearance.
     """
     def __init__(self,
-                 team_1_class_name= "dark blue shirt",
-                 team_2_class_name= "white shirt",
+                 team_1_class_name,
+                 team_2_class_name,
                  ):
         """
-        Initialize the TeamAssigner with specified team jersey descriptions.
+        Initialize the TeamClassifier with specified team jersey descriptions.
 
         Args: 
             team_1_class_name (str): Description of Team 1's jersey appearance.
             team_2_class_name (str): Description of Team 2's jersey appearance.
         """
-        self.team_colors = {}
-        self.player_team_dict = {}        
+        self.team_colors = {}      
     
         self.team_1_class_name = team_1_class_name
         self.team_2_class_name = team_2_class_name
@@ -49,13 +48,12 @@ class TeamAssigner:
 
         self.team_1_color_rgb = self.color_name_to_rgb.get(self.team_1_class_name, [255, 255, 255])
         self.team_2_color_rgb = self.color_name_to_rgb.get(self.team_2_class_name, [0, 0, 139])
-
-    def load_model(self):
-        """
-        Loads the pre-trained vision model for jersey color classification.
-        """
+        
+        # Load CLIP model once
         self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
         self.processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
+
+        self.player_team_dict = {}
 
     def get_player_color(self, frame, bbox):
         """
@@ -138,8 +136,6 @@ class TeamAssigner:
         if player_assignment is not None:
             if len(player_assignment) == len(video_frames):
                 return player_assignment
-
-        self.load_model()
 
         player_assignment=[]
         for frame_num, player_track in enumerate(player_tracks):        
