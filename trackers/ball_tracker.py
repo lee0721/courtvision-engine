@@ -73,7 +73,7 @@ class BallTracker:
                 cls_id = det[3]
                 confidence = det[2]
 
-                if cls_id == cls_names_inv['Ball']:
+                if cls_id == cls_names_inv['Basketball']: #test
                     if confidence > max_confidence:
                         chosen_bbox = bbox
                         max_confidence = confidence
