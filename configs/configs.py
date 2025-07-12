@@ -13,5 +13,5 @@ OUTPUT_VIDEO_PATH = 'output_videos/output_video.avi'
 ACTION_RECOGNITION_MODEL_PATH = 'models/action_r2plus1d_best.pt'
 
 # Team class names used for classification (these must match YOLO class labels or tracker labels)
-TEAM_1_CLASS_NAME = "dark blue shirt"
-TEAM_2_CLASS_NAME = "white shirt"
+TEAM_1_CLASS_NAME = "blue shirt"
+TEAM_2_CLASS_NAME = "yellow shirt"
