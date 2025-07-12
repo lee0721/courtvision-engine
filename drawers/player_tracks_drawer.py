@@ -50,8 +50,8 @@ class PlayerTracksDrawer:
                 frame = draw_ellipse(frame, player["bbox"], color, track_id)
 
                 # Draw red triangle if player has the ball
-                if track_id == player_id_with_ball:
-                    frame = draw_traingle(frame, player["bbox"], (0, 0, 255))
+                #if track_id == player_id_with_ball:
+                #    frame = draw_traingle(frame, player["bbox"], (0, 0, 255))
 
             output_video_frames.append(frame)
 
