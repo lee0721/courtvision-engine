@@ -154,9 +154,6 @@ class VideoAnalysis:
         ## Draw KeyPoints
         #output_video_frames = arena_mark_drawer.draw(output_video_frames, arena_marks_per_frame)
 
-        ## Draw Frame Number
-        #output_video_frames = frame_number_drawer.draw(output_video_frames)
-
         ## Draw Tactical View
         '''
         output_video_frames = perspective_drawer.draw(output_video_frames,
@@ -169,6 +166,9 @@ class VideoAnalysis:
                                                         ball_aquisition,
                                                         )
         '''
+        
+        ## Draw Frame Number
+        #output_video_frames = frame_number_drawer.draw(output_video_frames)
         
         # Speed and Distance Drawer
         '''
