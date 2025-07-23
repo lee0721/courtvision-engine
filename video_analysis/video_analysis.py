@@ -152,7 +152,7 @@ class VideoAnalysis:
                                                                 passes,
                                                                 interceptions)
         ## Draw KeyPoints
-        #output_video_frames = arena_mark_drawer.draw(output_video_frames, arena_marks_per_frame)
+        output_video_frames = arena_mark_drawer.draw(output_video_frames, arena_marks_per_frame)
 
         ## Draw Tactical View
         '''
