@@ -169,13 +169,11 @@ class VideoAnalysis:
         output_video_frames = frame_number_drawer.draw(output_video_frames)
         
         # Speed and Distance Drawer
-        '''
         output_video_frames = trajectory_kinetics_drawer.draw(output_video_frames,
                                                             player_tracks,
                                                             player_distances_per_frame,
                                                             player_speed_per_frame
                                                             )
-        '''
         
         # Draw action recognition results
         #output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
