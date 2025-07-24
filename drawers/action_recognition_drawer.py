@@ -27,7 +27,7 @@ class ActionRecognitionDrawer:
             for player_id, label_list in action_predictions.items()
         }
 
-    def draw(self, video_frames, player_tracks, ball_control_data, vid_stride=8):
+    def draw(self, video_frames, player_tracks, vid_stride=8):
         """
         Draw action labels on video frames.
 
