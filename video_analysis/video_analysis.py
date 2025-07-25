@@ -152,9 +152,10 @@ class VideoAnalysis:
                                                                 passes,
                                                                 interceptions)
         ## Draw KeyPoints
-        output_video_frames = arena_mark_drawer.draw(output_video_frames, arena_marks_per_frame)
+        #output_video_frames = arena_mark_drawer.draw(output_video_frames, arena_marks_per_frame)
 
         ## Draw Tactical View
+        '''
         output_video_frames = perspective_drawer.draw(output_video_frames,
                                                         perspective_transformer.court_image_path,
                                                         perspective_transformer.width,
@@ -164,19 +165,20 @@ class VideoAnalysis:
                                                         player_assignment,
                                                         ball_aquisition,
                                                         )
-        
+        '''
         ## Draw Frame Number
-        output_video_frames = frame_number_drawer.draw(output_video_frames)
+        #output_video_frames = frame_number_drawer.draw(output_video_frames)
         
         # Speed and Distance Drawer
+        '''
         output_video_frames = trajectory_kinetics_drawer.draw(output_video_frames,
                                                             player_tracks,
                                                             player_distances_per_frame,
                                                             player_speed_per_frame
                                                             )
-        
+        '''
         # Draw action recognition results
-        output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
+        #output_video_frames = action_recognition_drawer.draw(output_video_frames, player_tracks) 
         
         # Save video
         save_video(output_video_frames, self.output_path)
