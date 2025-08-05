@@ -8,7 +8,7 @@ from PIL import Image
 import json
 import os
 # Load label dictionary for action classes
-LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "training_notebooks/dataset", "labels_dict.json")
+LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "action_recognition", "labels_dict.json")
 with open(LABELS_DICT_PATH, "r") as f:
     LABELS_DICT = json.load(f)
     
