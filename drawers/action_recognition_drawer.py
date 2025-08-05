@@ -6,7 +6,7 @@ class ActionRecognitionDrawer:
     This class draws action recognition labels on the video frames,
     based on per-player predictions.
     """
-    def __init__(self, labels_file='action_recognition/training_notebooks/dataset/labels_dict.json'):
+    def __init__(self, labels_file='action_recognition/labels_dict.json'):
         # Load the mapping from label index to action label name
         self.action_predictions = {}
         with open(labels_file, 'r') as f:
