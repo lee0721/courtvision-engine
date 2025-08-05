@@ -62,7 +62,7 @@ def draw_ellipse(frame, bbox, color, track_id=None):
             lineType=cv2.LINE_4
         )
     except cv2.error as e:
-        print(f"[OpenCV 錯誤] ellipse 繪圖失敗：track_id={track_id} bbox={bbox} 寬度={width} 錯誤={e}")
+        print(f"[OpenCV Error] Failed to draw ellipse: track_id={track_id} bbox={bbox} width={width} error={e}")
 
     # Track ID label
     if track_id is not None:
