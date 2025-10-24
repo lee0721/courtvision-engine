@@ -1,0 +1,11 @@
+torch>=2.0
+torchvision>=0.15
+numpy>=1.22
+pandas>=1.5
+scikit-learn>=1.2
+tqdm
+easydict
+vidaug
+imutils
+ultralytics
+deep_sort_realtime

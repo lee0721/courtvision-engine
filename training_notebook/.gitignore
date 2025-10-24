@@ -1,0 +1,10 @@
+__pycache__/
+*.pt
+*.zip
+*.mp4
+*.jpg
+*.jpeg
+.DS_Store
+logs/
+dataset/
+
