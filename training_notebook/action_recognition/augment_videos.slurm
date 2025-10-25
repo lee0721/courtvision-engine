@@ -8,10 +8,11 @@
 #SBATCH --mem=12G
 #SBATCH --time=01:00:00
 
-# Load Conda module and activate the environment
-module load anaconda3/2022.10
-source /software/spackages_v0_21_prod/apps/linux-ubuntu22.04-zen2/gcc-13.2.0/anaconda3-2022.10*/etc/profile.d/conda.sh
-conda activate yolov8
+# Load the anaconda module provided by the HPC system
+module load anaconda3/2022.10-gcc-13.2.0
+
+# Activate the conda virtual environment (e.g., named 'bball')
+source activate bball
 
 # Change to the working directory
 cd $SLURM_SUBMIT_DIR
