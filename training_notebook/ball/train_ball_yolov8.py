@@ -5,7 +5,7 @@ from datetime import datetime
 
 # === Training Parameters Setup ===
 model_name = "yolov8m.pt"
-data_yaml = "../AI-Sports-Analytics-System-7/data.yaml"
+data_yaml = "/users/k24016446/basketball_analysis/training_notebook/AI-Sports-Analytics-System-7/data.yaml"
 epochs = 150
 imgsz = 640
 batch = 64  # Change to 'batch'
