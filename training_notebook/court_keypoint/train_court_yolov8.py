@@ -8,7 +8,8 @@ model_name = "yolov8x-pose.pt"
 data_yaml = "/users/k24016446/basketball_analysis/training_notebook/court_keypoint/reloc2-1/data.yaml"
 epochs = 500
 imgsz = 640
-batch = 16  # Change to 'batch'
+batch = 4  # Change to 'batch'
+workers = 8
 
 # === Training Execution ===
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -22,6 +23,7 @@ model.train(
     imgsz=imgsz,
     name=run_name,
     batch=batch,  # Correct 'batch' instead of 'batch_size'
+    workers=workers
 )
 
 # === Backup best.pt ===
