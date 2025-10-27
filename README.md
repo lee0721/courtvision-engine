@@ -6,6 +6,9 @@ ball-possession heuristics, tactical-view projection, and action recognition to
 produce an annotated video that surfaces passes, interceptions, and per-player
 movement metrics.
 
+## Project Overview
+[🎥 Explanation video](https://drive.google.com/file/d/1-hqNvQog2tOV4v0bxwxdczk2CtINs8SM/view?usp=sharing)
+
 ## Features
 - **Player & ball tracking** – YOLOv8 detections paired with ByteTrack keep
   persistent IDs for every player while a separate detector follows the ball,
