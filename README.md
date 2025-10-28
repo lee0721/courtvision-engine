@@ -1,4 +1,4 @@
-# CourtVision Engine
+# CourtVision Engine 🏀
 
 CourtVision Engine is a computer-vision toolkit for breaking down half-court basketball footage. The
 pipeline combines multi-object tracking, jersey-based team classification,
@@ -6,10 +6,10 @@ ball-possession heuristics, tactical-view projection, and action recognition to
 produce an annotated video that surfaces passes, interceptions, and per-player
 movement metrics.
 
-## Project Overview
+## Project Overview 🎯
 [🎥 Explanation video](https://drive.google.com/file/d/1-hqNvQog2tOV4v0bxwxdczk2CtINs8SM/view?usp=sharing)
 
-## Features
+## Features ✨
 - **Player & ball tracking** – YOLOv8 detections paired with ByteTrack keep
   persistent IDs for every player while a separate detector follows the ball,
   filters false positives, and interpolates missing frames.
@@ -32,7 +32,7 @@ movement metrics.
   (detections, classifications, predictions) as pickled stubs so subsequent runs
   iterate quickly.
 
-## Pipeline at a Glance
+## Pipeline at a Glance 🧭
 ```
 Video Frames
    │
@@ -48,7 +48,7 @@ Video Frames
     Drawers overlay all artefacts → rendered analysis video
 ```
 
-## Repository Layout
+## Repository Layout 🗂️
 - `main.py` – CLI entry point for running a full analysis on a source video.
 - `video_analysis/` – orchestrates the end-to-end pipeline.
 - `trackers/` – YOLO-based player and ball detectors plus ByteTrack wrappers.
