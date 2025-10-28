@@ -5,7 +5,7 @@ from datetime import datetime
 
 # === Training Parameters Setup ===
 model_name = "yolov8x-pose.pt"
-data_yaml = "/users/k24016446/basketball_analysis/training_notebook/court_keypoint/reloc2-1/data.yaml"
+data_yaml = "/users/k24016446/courtvision-engine/training_notebook/court_keypoint/reloc2-1/data.yaml"
 epochs = 500
 imgsz = 640
 batch = 4  # Change to 'batch'

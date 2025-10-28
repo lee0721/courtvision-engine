@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=basketball_analysis
+#SBATCH --job-name=courtvision_engine
 #SBATCH --partition=interruptible_gpu
 #SBATCH --gres=gpu:1              # Request 1 GPU
 #SBATCH --mem=32G                 
@@ -8,7 +8,7 @@
 #SBATCH --output=job_output.log   
 #SBATCH --error=job_error.log
 # Change to the working directory
-cd ~/basketball_analysis
+cd ~/courtvision-engine
 
 # Load the anaconda module provided by the HPC system
 module load anaconda3/2022.10-gcc-13.2.0

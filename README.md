@@ -1,6 +1,6 @@
-# Basketball Analysis Pipeline
+# CourtVision Engine
 
-Computer-vision toolkit for breaking down half-court basketball footage. The
+CourtVision Engine is a computer-vision toolkit for breaking down half-court basketball footage. The
 pipeline combines multi-object tracking, jersey-based team classification,
 ball-possession heuristics, tactical-view projection, and action recognition to
 produce an annotated video that surfaces passes, interceptions, and per-player
@@ -115,4 +115,3 @@ Outputs:
 The repo processes broadcast footage and generates advanced tracking data. If
 you apply it to competitions, make sure usage complies with local league rules,
 player privacy requirements, and data governance guidelines.
-
