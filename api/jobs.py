@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -20,10 +21,14 @@ class JobRecord(BaseModel):
     stub_path: Optional[str] = None
     use_stubs: Optional[bool] = None
     result_json_path: Optional[str] = None
+    request_payload: Optional[dict] = None
     submitted_at: datetime
     started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     progress: Optional[float] = None
+    runtime_ms: Optional[float] = None
+    worker_host: Optional[str] = None
     error_message: Optional[str] = None
 
 
@@ -48,10 +53,14 @@ class JobStore:
                     stub_path,
                     use_stubs,
                     result_json_path,
+                    request_payload,
                     submitted_at,
                     started_at,
+                    completed_at,
                     updated_at,
                     progress,
+                    runtime_ms,
+                    worker_host,
                     error_message
                 )
                 VALUES (
@@ -63,10 +72,14 @@ class JobStore:
                     :stub_path,
                     :use_stubs,
                     :result_json_path,
+                    :request_payload,
                     :submitted_at,
                     :started_at,
+                    :completed_at,
                     :updated_at,
                     :progress,
+                    :runtime_ms,
+                    :worker_host,
                     :error_message
                 )
                 """,
@@ -106,10 +119,14 @@ class JobStore:
                     stub_path = :stub_path,
                     use_stubs = :use_stubs,
                     result_json_path = :result_json_path,
+                    request_payload = :request_payload,
                     submitted_at = :submitted_at,
                     started_at = :started_at,
+                    completed_at = :completed_at,
                     updated_at = :updated_at,
                     progress = :progress,
+                    runtime_ms = :runtime_ms,
+                    worker_host = :worker_host,
                     error_message = :error_message
                 WHERE job_id = :job_id
                 """,
@@ -135,29 +152,48 @@ class JobStore:
                     stub_path TEXT,
                     use_stubs INTEGER,
                     result_json_path TEXT,
+                    request_payload TEXT,
                     submitted_at TEXT NOT NULL,
                     started_at TEXT,
+                    completed_at TEXT,
                     updated_at TEXT,
                     progress REAL,
+                    runtime_ms REAL,
+                    worker_host TEXT,
                     error_message TEXT
                 )
                 """
             )
             self._ensure_columns(conn)
 
+    def list_jobs(self, status: Optional[JobStatus] = None, limit: int = 50) -> list[JobRecord]:
+        query = "SELECT * FROM jobs"
+        params: list = []
+        if status:
+            query += " WHERE status = ?"
+            params.append(status.value)
+        query += " ORDER BY submitted_at DESC LIMIT ?"
+        params.append(limit)
+        with self._lock, self._connect() as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [self._deserialize_job(row) for row in rows]
+
     def mark_running_as_failed(self, error_message: str) -> int:
-        updated_at = datetime.utcnow().isoformat()
+        now = datetime.utcnow()
+        updated_at = now.isoformat()
+        completed_at = now.isoformat()
         with self._lock, self._connect() as conn:
             cursor = conn.execute(
                 """
                 UPDATE jobs
-                SET status = ?, error_message = ?, updated_at = ?
+                SET status = ?, error_message = ?, updated_at = ?, completed_at = ?
                 WHERE status = ?
                 """,
                 (
                     JobStatus.FAILED.value,
                     error_message,
                     updated_at,
+                    completed_at,
                     JobStatus.RUNNING.value,
                 ),
             )
@@ -168,6 +204,10 @@ class JobStore:
         columns = {
             "stub_path": "TEXT",
             "use_stubs": "INTEGER",
+            "request_payload": "TEXT",
+            "runtime_ms": "REAL",
+            "worker_host": "TEXT",
+            "completed_at": "TEXT",
         }
         for column_name, column_type in columns.items():
             if column_name not in existing:
@@ -184,8 +224,10 @@ class JobStore:
             **data,
             "status": job.status.value,
             "use_stubs": self._serialize_bool(job.use_stubs),
+            "request_payload": self._serialize_json(job.request_payload),
             "submitted_at": self._serialize_datetime(job.submitted_at),
             "started_at": self._serialize_datetime(job.started_at),
+            "completed_at": self._serialize_datetime(job.completed_at),
             "updated_at": self._serialize_datetime(job.updated_at),
         }
 
@@ -199,10 +241,14 @@ class JobStore:
             stub_path=row["stub_path"],
             use_stubs=self._deserialize_bool(row["use_stubs"]),
             result_json_path=row["result_json_path"],
+            request_payload=self._deserialize_json(row["request_payload"]),
             submitted_at=self._deserialize_datetime(row["submitted_at"]),
             started_at=self._deserialize_datetime(row["started_at"]),
+            completed_at=self._deserialize_datetime(row["completed_at"]),
             updated_at=self._deserialize_datetime(row["updated_at"]),
             progress=row["progress"],
+            runtime_ms=row["runtime_ms"],
+            worker_host=row["worker_host"],
             error_message=row["error_message"],
         )
 
@@ -221,6 +267,19 @@ class JobStore:
         if value is None:
             return None
         return 1 if value else 0
+
+    def _deserialize_json(self, value: Optional[str]) -> Optional[dict]:
+        if not value:
+            return None
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return None
+
+    def _serialize_json(self, value: Optional[dict]) -> Optional[str]:
+        if value is None:
+            return None
+        return json.dumps(value, ensure_ascii=True)
 
     def _dump_job(self, job: JobRecord) -> dict:
         if hasattr(job, "model_dump"):

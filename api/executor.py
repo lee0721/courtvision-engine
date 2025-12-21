@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import socket
 import threading
 import time
 from datetime import datetime
@@ -95,10 +96,12 @@ class BackgroundExecutor:
         result_json_path: Path,
     ) -> None:
         start_time = time.perf_counter()
+        worker_host = socket.gethostname()
         self.job_store.update_job(
             job_id,
             status=JobStatus.RUNNING,
             started_at=datetime.utcnow(),
+            worker_host=worker_host,
         )
         logger.info("job_id=%s status=running output_video=%s", job_id, output_video_path)
         try:
@@ -124,23 +127,29 @@ class BackgroundExecutor:
             results.setdefault("generated_at", datetime.utcnow().isoformat() + "Z")
             _write_json(result_json_path, results)
 
+            completed_at = datetime.utcnow()
+            elapsed_s = time.perf_counter() - start_time
             self.job_store.update_job(
                 job_id,
                 status=JobStatus.COMPLETED,
                 output_video_path=str(output_video_path),
                 result_json_path=str(result_json_path),
+                completed_at=completed_at,
+                runtime_ms=elapsed_s * 1000,
             )
-            elapsed = time.perf_counter() - start_time
             logger.info(
                 "job_id=%s status=completed elapsed_s=%.2f result_json=%s",
                 job_id,
-                elapsed,
+                elapsed_s,
                 result_json_path,
             )
         except Exception as exc:  # pragma: no cover - defensive
+            elapsed_s = time.perf_counter() - start_time
             self.job_store.update_job(
                 job_id,
                 status=JobStatus.FAILED,
                 error_message=str(exc),
+                completed_at=datetime.utcnow(),
+                runtime_ms=elapsed_s * 1000,
             )
             logger.exception("job_id=%s status=failed error=%s", job_id, exc)

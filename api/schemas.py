@@ -43,16 +43,41 @@ class AnalysisResponse(BaseModel):
     submitted_at: datetime
 
 
+class JobSummary(BaseModel):
+    job_id: str
+    status: JobStatus
+    submitted_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    runtime_ms: Optional[float] = None
+    error_message: Optional[str] = None
+    input_video_path: Optional[str] = None
+    input_video_url: Optional[str] = None
+    output_video_path: Optional[str] = None
+
+
+class JobsResponse(BaseModel):
+    count: int
+    jobs: list[JobSummary]
+
+
 class StatusResponse(BaseModel):
     job_id: str
     status: JobStatus
     submitted_at: datetime
     started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     progress: Optional[float] = None
+    runtime_ms: Optional[float] = None
+    worker_host: Optional[str] = None
     error_message: Optional[str] = None
+    input_video_path: Optional[str] = None
+    input_video_url: Optional[str] = None
+    output_video_path: Optional[str] = None
+    result_json_path: Optional[str] = None
 
 
 class ResultsResponse(StatusResponse):
-    output_video_path: Optional[str] = None
-    result_json_path: Optional[str] = None
+    pass

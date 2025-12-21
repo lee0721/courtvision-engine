@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Union
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -17,6 +17,8 @@ from .schemas import (
     AnalysisRequest,
     AnalysisResponse,
     JobStatus,
+    JobsResponse,
+    JobSummary,
     ResultsResponse,
     StatusResponse,
 )
@@ -24,7 +26,8 @@ from .schemas import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "output_videos"
 DEFAULT_STUB_DIR = REPO_ROOT / "stubs"
-JOB_DB_PATH = DEFAULT_STUB_DIR / "jobs.db"
+DEFAULT_DATA_DIR = REPO_ROOT / "data"
+JOB_DB_PATH = DEFAULT_DATA_DIR / "jobs.db"
 LOG_LEVEL = os.getenv("COURTVISION_LOG_LEVEL", "INFO").upper()
 
 if not logging.getLogger().handlers:
@@ -131,6 +134,7 @@ def submit_analysis(request: AnalysisRequest) -> AnalysisResponse:
         stub_path=str(stub_path),
         use_stubs=request.use_stubs,
         result_json_path=str(result_json_path),
+        request_payload=_model_dump(request),
         submitted_at=submitted_at,
     )
     job_store.create_job(job)
@@ -160,9 +164,16 @@ def get_status(job_id: str) -> StatusResponse:
         status=job.status,
         submitted_at=job.submitted_at,
         started_at=job.started_at,
+        completed_at=job.completed_at,
         updated_at=job.updated_at,
         progress=job.progress,
+        runtime_ms=job.runtime_ms,
+        worker_host=job.worker_host,
         error_message=job.error_message,
+        input_video_path=job.input_video_path,
+        input_video_url=job.input_video_url,
+        output_video_path=job.output_video_path,
+        result_json_path=job.result_json_path,
     )
 
 
@@ -179,9 +190,16 @@ def get_results(job_id: str):
             status=job.status,
             submitted_at=job.submitted_at,
             started_at=job.started_at,
+            completed_at=job.completed_at,
             updated_at=job.updated_at,
             progress=job.progress,
+            runtime_ms=job.runtime_ms,
+            worker_host=job.worker_host,
             error_message=job.error_message,
+            input_video_path=job.input_video_path,
+            input_video_url=job.input_video_url,
+            output_video_path=job.output_video_path,
+            result_json_path=job.result_json_path,
         )
         return JSONResponse(status_code=202, content=_model_dump(payload))
 
@@ -190,12 +208,42 @@ def get_results(job_id: str):
         status=job.status,
         submitted_at=job.submitted_at,
         started_at=job.started_at,
+        completed_at=job.completed_at,
         updated_at=job.updated_at,
         progress=job.progress,
+        runtime_ms=job.runtime_ms,
+        worker_host=job.worker_host,
         error_message=job.error_message,
+        input_video_path=job.input_video_path,
+        input_video_url=job.input_video_url,
         output_video_path=job.output_video_path,
         result_json_path=job.result_json_path,
     )
+
+
+@app.get("/jobs", response_model=JobsResponse, tags=["Jobs"])
+def list_jobs(
+    status: JobStatus | None = None,
+    limit: int = Query(default=50, ge=1, le=500),
+) -> JobsResponse:
+    jobs = job_store.list_jobs(status=status, limit=limit)
+    summaries = [
+        JobSummary(
+            job_id=job.job_id,
+            status=job.status,
+            submitted_at=job.submitted_at,
+            started_at=job.started_at,
+            completed_at=job.completed_at,
+            updated_at=job.updated_at,
+            runtime_ms=job.runtime_ms,
+            error_message=job.error_message,
+            input_video_path=job.input_video_path,
+            input_video_url=job.input_video_url,
+            output_video_path=job.output_video_path,
+        )
+        for job in jobs
+    ]
+    return JobsResponse(count=len(summaries), jobs=summaries)
 
 
 @app.post("/jobs/{job_id}/retry", response_model=StatusResponse, tags=["Jobs"])
@@ -251,6 +299,9 @@ def retry_job(job_id: str) -> StatusResponse:
         error_message=None,
         progress=None,
         started_at=None,
+        completed_at=None,
+        runtime_ms=None,
+        worker_host=None,
     )
     executor.submit(job_id, request, output_video_path, stub_path, result_json_path)
     logger.info("job_id=%s status=queued retry=true", job_id)
@@ -260,7 +311,14 @@ def retry_job(job_id: str) -> StatusResponse:
         status=updated_job.status,
         submitted_at=updated_job.submitted_at,
         started_at=updated_job.started_at,
+        completed_at=updated_job.completed_at,
         updated_at=updated_job.updated_at,
         progress=updated_job.progress,
+        runtime_ms=updated_job.runtime_ms,
+        worker_host=updated_job.worker_host,
         error_message=updated_job.error_message,
+        input_video_path=updated_job.input_video_path,
+        input_video_url=updated_job.input_video_url,
+        output_video_path=updated_job.output_video_path,
+        result_json_path=updated_job.result_json_path,
     )
