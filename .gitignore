@@ -1,5 +1,8 @@
 __pycache__/
+.venv/
+venv/
 *.pt
 *.avi
 *.pkl
+*.db
 .DS_Store

@@ -29,14 +29,17 @@ from configs import(
 )
 
 class VideoAnalysis:
-    def __init__(self, input_path, output_path, stub_path):
+    def __init__(self, input_path, output_path, stub_path, use_stubs=True):
         self.input_path = input_path
         self.output_path = output_path
         self.stub_path = stub_path
+        self.use_stubs = use_stubs
 
     def run(self):
         # Read Video
         video_frames = read_video(self.input_path)
+        if not video_frames:
+            raise ValueError(f"No frames read from input video: {self.input_path}")
         
         ## Initialize Tracker
         #player_tracker = DeepSortPlayerTracker(PLAYER_DETECTOR_PATH)
@@ -50,22 +53,19 @@ class VideoAnalysis:
         action_recognition_model = ActionRecognitionModel(ACTION_RECOGNITION_MODEL_PATH) 
 
         # Run Detectors
-        player_tracks = player_tracker.get_object_tracks(video_frames,
-                                        read_from_stub=True,
-                                        stub_path=os.path.join(self.stub_path, 'deepsort_player_track_stubs.pkl')
-                                        )
-        player_tracks = player_tracker.get_object_tracks(video_frames,
-                                        read_from_stub=True,
+        player_tracks = player_tracker.get_object_tracks(
+                                        video_frames,
+                                        read_from_stub=self.use_stubs,
                                         stub_path=os.path.join(self.stub_path, 'player_track_stubs.pkl')
                                         )
         
         ball_tracks = ball_tracker.get_object_tracks(video_frames,
-                                                    read_from_stub=True,
+                                                    read_from_stub=self.use_stubs,
                                                     stub_path=os.path.join(self.stub_path, 'ball_track_stubs.pkl')
                                                     )
         ## Run KeyPoint Extractor
         arena_marks_per_frame = mark_detector.extract_marks(video_frames,
-                                                                        read_from_stub=True,
+                                                                        read_from_stub=self.use_stubs,
                                                                         stub_path=os.path.join(self.stub_path, 'court_key_points_stub.pkl')
                                                                         )
 
@@ -79,7 +79,7 @@ class VideoAnalysis:
         team_classifier = TeamClassifier( team_1_class_name=TEAM_1_CLASS_NAME, team_2_class_name=TEAM_2_CLASS_NAME)
         player_assignment = team_classifier.get_player_teams_across_frames(video_frames,
                                                                         player_tracks,
-                                                                        read_from_stub=True,
+                                                                        read_from_stub=self.use_stubs,
                                                                         stub_path=os.path.join(self.stub_path, 'player_assignment_stub.pkl')
                                                                         )
 
@@ -111,7 +111,7 @@ class VideoAnalysis:
         player_speed_per_frame = trajectory_kinetics_analyzer.calculate_speed(player_distances_per_frame)
         
         # Run Action Recognition
-        action_predictions = action_recognition_model.predict(video_frames, player_tracks, read_from_stub=True, 
+        action_predictions = action_recognition_model.predict(video_frames, player_tracks, read_from_stub=self.use_stubs, 
                                                             stub_path=os.path.join(self.stub_path, 'action_recognition_predictions.pkl'))
         
         # Draw output   
@@ -176,3 +176,80 @@ class VideoAnalysis:
         
         # Save video
         save_video(output_video_frames, self.output_path)
+
+        analysis_result = self._build_analysis_result(
+            passes,
+            interceptions,
+            ball_aquisition,
+            player_assignment,
+            player_distances_per_frame,
+            player_speed_per_frame,
+            len(video_frames)
+        )
+        return analysis_result
+
+    def _build_analysis_result(
+        self,
+        passes,
+        interceptions,
+        ball_aquisition,
+        player_assignment,
+        player_distances_per_frame,
+        player_speed_per_frame,
+        frame_count
+    ):
+        team_control = []
+        for assignment, ball_player in zip(player_assignment, ball_aquisition):
+            if ball_player == -1 or ball_player not in assignment:
+                team_control.append(-1)
+            else:
+                team_control.append(assignment[ball_player])
+
+        team_1_frames = sum(1 for team_id in team_control if team_id == 1)
+        team_2_frames = sum(1 for team_id in team_control if team_id == 2)
+        none_frames = sum(1 for team_id in team_control if team_id == -1)
+
+        total_frames = frame_count or 1
+        team_control_ratio = {
+            "team_1": team_1_frames / total_frames,
+            "team_2": team_2_frames / total_frames,
+            "none": none_frames / total_frames,
+        }
+
+        distance_totals = {}
+        for frame_distances in player_distances_per_frame:
+            for player_id, distance in frame_distances.items():
+                distance_totals[player_id] = distance_totals.get(player_id, 0.0) + float(distance)
+
+        speed_stats = {}
+        for frame_speeds in player_speed_per_frame:
+            for player_id, speed in frame_speeds.items():
+                stats = speed_stats.setdefault(player_id, {"sum": 0.0, "count": 0, "max": 0.0})
+                speed_value = float(speed)
+                if speed_value > 0:
+                    stats["sum"] += speed_value
+                    stats["count"] += 1
+                    stats["max"] = max(stats["max"], speed_value)
+
+        player_metrics = {}
+        for player_id in set(distance_totals) | set(speed_stats):
+            stats = speed_stats.get(player_id, {"sum": 0.0, "count": 0, "max": 0.0})
+            avg_speed = stats["sum"] / stats["count"] if stats["count"] else 0.0
+            player_metrics[str(player_id)] = {
+                "total_distance_m": round(distance_totals.get(player_id, 0.0), 4),
+                "avg_speed_kmh": round(avg_speed, 4),
+                "max_speed_kmh": round(stats["max"], 4),
+            }
+
+        return {
+            "input_video": self.input_path,
+            "output_video": self.output_path,
+            "frame_count": frame_count,
+            "events": {
+                "passes": passes,
+                "interceptions": interceptions,
+            },
+            "ball_possession": ball_aquisition,
+            "team_ball_control_ratio": team_control_ratio,
+            "player_metrics": player_metrics,
+        }
