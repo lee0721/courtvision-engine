@@ -16,6 +16,11 @@ from .schemas import AnalysisRequest, JobStatus
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INPUT_VIDEOS_DIR = REPO_ROOT / "input_videos"
 
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - optional dependency
+    np = None
+
 
 def _resolve_path(path_value: str) -> Path:
     path = Path(path_value)
@@ -35,10 +40,28 @@ def _download_input_video(input_url: str, job_id: str) -> Path:
     return destination
 
 
+def _to_serializable(value):
+    if isinstance(value, dict):
+        return {str(key): _to_serializable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_to_serializable(item) for item in value]
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat() + "Z"
+    if np is not None:
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, np.generic):
+            return value.item()
+    return value
+
+
 def _write_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    serializable = _to_serializable(data)
     with path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2, ensure_ascii=True)
+        json.dump(serializable, handle, indent=2, ensure_ascii=True)
 
 
 class BackgroundExecutor:
