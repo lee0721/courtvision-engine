@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
@@ -15,6 +16,7 @@ from .schemas import AnalysisRequest, JobStatus
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INPUT_VIDEOS_DIR = REPO_ROOT / "input_videos"
+logger = logging.getLogger("courtvision.executor")
 
 try:
     import numpy as np
@@ -36,6 +38,7 @@ def _download_input_video(input_url: str, job_id: str) -> Path:
     if not Path(filename).suffix:
         filename = f"{filename}.mp4"
     destination = INPUT_VIDEOS_DIR / filename
+    logger.info("job_id=%s downloading input_url=%s destination=%s", job_id, input_url, destination)
     urlretrieve(input_url, destination)
     return destination
 
@@ -91,14 +94,17 @@ class BackgroundExecutor:
         stub_path: Path,
         result_json_path: Path,
     ) -> None:
+        start_time = time.perf_counter()
         self.job_store.update_job(
             job_id,
             status=JobStatus.RUNNING,
             started_at=datetime.utcnow(),
         )
+        logger.info("job_id=%s status=running output_video=%s", job_id, output_video_path)
         try:
             if request.input_video_path:
                 input_path = _resolve_path(request.input_video_path)
+                logger.info("job_id=%s input_path=%s", job_id, input_path)
             elif request.input_video_url:
                 input_path = _download_input_video(request.input_video_url, job_id)
             else:
@@ -124,9 +130,17 @@ class BackgroundExecutor:
                 output_video_path=str(output_video_path),
                 result_json_path=str(result_json_path),
             )
+            elapsed = time.perf_counter() - start_time
+            logger.info(
+                "job_id=%s status=completed elapsed_s=%.2f result_json=%s",
+                job_id,
+                elapsed,
+                result_json_path,
+            )
         except Exception as exc:  # pragma: no cover - defensive
             self.job_store.update_job(
                 job_id,
                 status=JobStatus.FAILED,
                 error_message=str(exc),
             )
+            logger.exception("job_id=%s status=failed error=%s", job_id, exc)

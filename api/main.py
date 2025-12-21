@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Union
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -24,6 +25,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "output_videos"
 DEFAULT_STUB_DIR = REPO_ROOT / "stubs"
 JOB_DB_PATH = DEFAULT_STUB_DIR / "jobs.db"
+LOG_LEVEL = os.getenv("COURTVISION_LOG_LEVEL", "INFO").upper()
+
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
 
 TAGS_METADATA = [
     {"name": "Analysis", "description": "Submit analysis jobs."},
@@ -38,7 +46,8 @@ app = FastAPI(
 
 job_store = JobStore(JOB_DB_PATH)
 executor = BackgroundExecutor(job_store)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("courtvision.api")
+logger.setLevel(LOG_LEVEL)
 
 
 def _resolve_path(path_value: str) -> Path:
@@ -63,14 +72,36 @@ def mark_interrupted_jobs() -> None:
         logger.info("Marked %s running job(s) as failed after restart.", count)
 
 
+@app.exception_handler(HTTPException)
+def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
+    logger.warning(
+        "HTTP %s path=%s detail=%s",
+        exc.status_code,
+        request.url.path,
+        exc.detail,
+    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(Exception)
+def handle_unhandled_exception(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled error path=%s", request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
 @app.post("/analysis", response_model=AnalysisResponse, status_code=202, tags=["Analysis"])
 def submit_analysis(request: AnalysisRequest) -> AnalysisResponse:
     if not request.input_video_path and not request.input_video_url:
+        logger.warning("Rejecting analysis request: missing input_video_path/input_video_url")
         raise HTTPException(status_code=400, detail="input_video_path or input_video_url is required")
 
     if request.input_video_path:
         input_path = _resolve_path(request.input_video_path)
         if not input_path.exists():
+            logger.warning(
+                "Rejecting analysis request: input_video_path missing path=%s",
+                request.input_video_path,
+            )
             raise HTTPException(
                 status_code=400,
                 detail=f"input_video_path does not exist: {request.input_video_path}",
@@ -105,6 +136,14 @@ def submit_analysis(request: AnalysisRequest) -> AnalysisResponse:
     job_store.create_job(job)
 
     executor.submit(job_id, request, output_video_path, stub_path, result_json_path)
+    logger.info(
+        "job_id=%s status=queued input_path=%s input_url=%s output_video=%s use_stubs=%s",
+        job_id,
+        request.input_video_path,
+        request.input_video_url,
+        output_video_path,
+        request.use_stubs,
+    )
 
     return AnalysisResponse(job_id=job_id, status=JobStatus.QUEUED, submitted_at=submitted_at)
 
@@ -115,6 +154,7 @@ def get_status(job_id: str) -> StatusResponse:
     if not job:
         raise HTTPException(status_code=404, detail="job_id not found")
 
+    logger.debug("job_id=%s status=%s", job_id, job.status)
     return StatusResponse(
         job_id=job.job_id,
         status=job.status,
@@ -133,6 +173,7 @@ def get_results(job_id: str):
         raise HTTPException(status_code=404, detail="job_id not found")
 
     if job.status != JobStatus.COMPLETED:
+        logger.debug("job_id=%s status=%s results not ready", job_id, job.status)
         payload = StatusResponse(
             job_id=job.job_id,
             status=job.status,
@@ -171,6 +212,10 @@ def retry_job(job_id: str) -> StatusResponse:
     if job.input_video_path:
         input_path = _resolve_path(job.input_video_path)
         if not input_path.exists():
+            logger.warning(
+                "Rejecting retry request: input_video_path missing path=%s",
+                job.input_video_path,
+            )
             raise HTTPException(
                 status_code=400,
                 detail=f"input_video_path does not exist: {job.input_video_path}",
@@ -208,6 +253,7 @@ def retry_job(job_id: str) -> StatusResponse:
         started_at=None,
     )
     executor.submit(job_id, request, output_video_path, stub_path, result_json_path)
+    logger.info("job_id=%s status=queued retry=true", job_id)
 
     return StatusResponse(
         job_id=updated_job.job_id,
