@@ -3,6 +3,7 @@ import supervision as sv
 import sys 
 sys.path.append('../')
 from utils import read_stub, save_stub
+from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
 
 
 class ArenaMarkDetector:
@@ -34,11 +35,14 @@ class ArenaMarkDetector:
                 return arena_marks
         
         # Run inference in batches to improve efficiency
-        batch_size=20
+        batch_size = DETECTION_BATCH_SIZE
         arena_marks = []
         for i in range(0,len(frames),batch_size):
             # Run YOLO keypoint prediction
-            detections_batch = self.model.predict(frames[i:i+batch_size],conf=0.5)
+            detections_batch = self.model.predict(
+                frames[i:i + batch_size],
+                conf=DETECTION_CONFIDENCE,
+            )
             
             # Collect keypoints per frame
             for detection in detections_batch:

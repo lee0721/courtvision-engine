@@ -1,20 +1,27 @@
-import torch
-import cv2
-import numpy as np
-from utils.stubs_utils import read_stub, save_stub
-from torchvision.transforms import Compose, ToTensor, Normalize, Resize
-from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
-from PIL import Image
+from __future__ import annotations
+
 import json
 import os
+
+import cv2
+import numpy as np
+import torch
+from PIL import Image
+from torchvision.models.video import R2Plus1D_18_Weights, r2plus1d_18
+from torchvision.transforms import Compose, Normalize, Resize, ToTensor
+
+from utils.stubs_utils import read_stub, save_stub
 # Load label dictionary for action classes
 LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "labels_dict.json")
 with open(LABELS_DICT_PATH, "r") as f:
     LABELS_DICT = json.load(f)
     
 class ActionRecognitionModel:
-    def __init__(self, model_path):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, model_path: str, device: str | None = None) -> None:
+        if device:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Load pretrained R(2+1)D model with custom classification head for 10 classes
         model = r2plus1d_18(weights=R2Plus1D_18_Weights.DEFAULT)

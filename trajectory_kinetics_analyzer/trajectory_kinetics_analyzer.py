@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import os
-import sys
 import pathlib
+import sys
 
 folder_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(folder_path, "../"))
 
 from utils import measure_distance
+from video_analysis.types import PerFrameFloat, Position, PositionsByFrame
 
 
 class TrajectoryKineticsAnalyzer:
@@ -16,11 +19,13 @@ class TrajectoryKineticsAnalyzer:
     calculates cumulative distance and running speed over time.
     """
 
-    def __init__(self, 
-                 width_in_pixels,
-                 height_in_pixels,
-                 width_in_meters,
-                 height_in_meters):
+    def __init__(
+        self,
+        width_in_pixels: int,
+        height_in_pixels: int,
+        width_in_meters: float,
+        height_in_meters: float,
+    ) -> None:
         """
         Args:
             width_in_pixels (int): Court width in pixels.
@@ -33,7 +38,11 @@ class TrajectoryKineticsAnalyzer:
         self.width_in_meters = width_in_meters
         self.height_in_meters = height_in_meters
 
-    def calculate_meter_distance(self, previous_pixel_position, current_pixel_position):
+    def calculate_meter_distance(
+        self,
+        previous_pixel_position: Position,
+        current_pixel_position: Position,
+    ) -> float:
         """
         Convert pixel positions to real-world meters and compute distance.
 
@@ -55,7 +64,7 @@ class TrajectoryKineticsAnalyzer:
         dist = measure_distance((mx1, my1), (mx2, my2)) * 0.4
         return dist
 
-    def calculate_distance(self, tactical_player_positions):
+    def calculate_distance(self, tactical_player_positions: PositionsByFrame) -> PerFrameFloat:
         """
         Calculate distance (in meters) each player travels per frame.
 
@@ -65,8 +74,8 @@ class TrajectoryKineticsAnalyzer:
         Returns:
             list: List of dicts containing distance per player per frame.
         """
-        previous_position = {}
-        output_distances = []
+        previous_position: dict[int, Position] = {}
+        output_distances: PerFrameFloat = []
 
         for frame_idx, positions in enumerate(tactical_player_positions):
             output_distances.append({})
@@ -78,7 +87,7 @@ class TrajectoryKineticsAnalyzer:
 
         return output_distances
 
-    def calculate_speed(self, distances, fps=30):
+    def calculate_speed(self, distances: PerFrameFloat, fps: int = 30) -> PerFrameFloat:
         """
         Calculate speed (km/h) for each player over time using a sliding window.
 
@@ -89,7 +98,7 @@ class TrajectoryKineticsAnalyzer:
         Returns:
             list: List of dicts containing player speed in km/h per frame.
         """
-        speeds = []
+        speeds: PerFrameFloat = []
         window_size = 5  # speed averaged over past 5 frames
 
         for frame_idx in range(len(distances)):

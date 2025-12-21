@@ -5,6 +5,7 @@ import pandas as pd
 import sys 
 sys.path.append('../')
 from utils import read_stub, save_stub
+from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
 
 class BallTracker:
     """
@@ -33,10 +34,13 @@ class BallTracker:
         Returns:
             list: A list of detection results from the YOLO model.
         """
-        batch_size = 20
+        batch_size = DETECTION_BATCH_SIZE
         detections = []
         for i in range(0, len(frames), batch_size):
-            detections_batch = self.model.predict(frames[i:i+batch_size], conf=0.5)
+            detections_batch = self.model.predict(
+                frames[i:i + batch_size],
+                conf=DETECTION_CONFIDENCE,
+            )
             detections += detections_batch
         return detections
 

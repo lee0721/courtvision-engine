@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -10,6 +9,8 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+
+from configs.settings import get_settings
 
 from .executor import BackgroundExecutor
 from .jobs import JobRecord, JobStore
@@ -24,17 +25,20 @@ from .schemas import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT_DIR = REPO_ROOT / "output_videos"
-DEFAULT_STUB_DIR = REPO_ROOT / "stubs"
-DEFAULT_DATA_DIR = REPO_ROOT / "data"
-JOB_DB_PATH = DEFAULT_DATA_DIR / "jobs.db"
-LOG_LEVEL = os.getenv("COURTVISION_LOG_LEVEL", "INFO").upper()
 
-if not logging.getLogger().handlers:
-    logging.basicConfig(
-        level=LOG_LEVEL,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
+def _resolve_path(path_value: str) -> Path:
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = REPO_ROOT / path
+    return path
+
+
+settings = get_settings()
+DEFAULT_OUTPUT_DIR = _resolve_path(settings.output_dir)
+DEFAULT_STUB_DIR = _resolve_path(settings.stubs_dir)
+DEFAULT_DATA_DIR = _resolve_path(settings.data_dir)
+JOB_DB_PATH = _resolve_path(settings.jobs_db_path)
+LOG_LEVEL = settings.log_level.upper()
 
 TAGS_METADATA = [
     {"name": "Analysis", "description": "Submit analysis jobs."},
@@ -52,12 +56,11 @@ executor = BackgroundExecutor(job_store)
 logger = logging.getLogger("courtvision.api")
 logger.setLevel(LOG_LEVEL)
 
-
-def _resolve_path(path_value: str) -> Path:
-    path = Path(path_value)
-    if not path.is_absolute():
-        path = REPO_ROOT / path
-    return path
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
 
 
 def _model_dump(model) -> dict:
