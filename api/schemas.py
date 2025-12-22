@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -80,4 +80,7 @@ class StatusResponse(BaseModel):
 
 
 class ResultsResponse(StatusResponse):
-    pass
+    result: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Parsed analysis_result.json content.",
+    )

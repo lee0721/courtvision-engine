@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -203,6 +204,19 @@ def get_results(job_id: str):
         )
         return JSONResponse(status_code=202, content=_model_dump(payload))
 
+    result_payload = None
+    if job.result_json_path:
+        result_path = _resolve_path(job.result_json_path)
+        if not result_path.exists():
+            logger.warning("job_id=%s result_json_missing path=%s", job_id, result_path)
+            raise HTTPException(status_code=404, detail="result_json not found")
+        try:
+            with result_path.open("r", encoding="utf-8") as handle:
+                result_payload = json.load(handle)
+        except Exception as exc:
+            logger.exception("job_id=%s result_json_read_failed path=%s", job_id, result_path)
+            raise HTTPException(status_code=500, detail="Failed to read result_json") from exc
+
     return ResultsResponse(
         job_id=job.job_id,
         status=job.status,
@@ -218,6 +232,7 @@ def get_results(job_id: str):
         input_video_url=job.input_video_url,
         output_video_path=job.output_video_path,
         result_json_path=job.result_json_path,
+        result=result_payload,
     )
 
 
