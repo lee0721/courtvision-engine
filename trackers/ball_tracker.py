@@ -5,11 +5,15 @@ import supervision as sv
 import numpy as np
 import pandas as pd
 import sys 
+import logging
 from typing import Any, Sequence
 
 sys.path.append('../')
+from utils.logging_utils import log_kv
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
+
+logger = logging.getLogger("courtvision.ball_tracker")
 
 class BallTracker:
     """
@@ -26,7 +30,17 @@ class BallTracker:
         Args:
             model_path (str): Path to the trained YOLO model.
         """
-        self.model = YOLO(model_path)
+        try:
+            self.model = YOLO(model_path)
+        except Exception as exc:  # pragma: no cover - model load
+            log_kv(
+                logger,
+                logging.ERROR,
+                "ball_model_load_failed",
+                model_path=model_path,
+                error=str(exc),
+            )
+            raise
 
     def detect_frames(self, frames: Sequence["np.ndarray"]) -> list[Any]:
         """
@@ -53,6 +67,7 @@ class BallTracker:
         frames: Sequence["np.ndarray"],
         read_from_stub: bool = False,
         stub_path: str | None = None,
+        job_id: str | None = None,
     ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Generate ball tracking results from frames with optional stub caching.
@@ -65,7 +80,12 @@ class BallTracker:
         Returns:
             list: A list of dictionaries with tracking results per frame.
         """
-        tracks = read_stub(read_from_stub, stub_path)
+        tracks = read_stub(
+            read_from_stub,
+            stub_path,
+            job_id=job_id,
+            stage="ball_tracks",
+        )
         if tracks is not None and len(tracks) == len(frames):
             return tracks
 
@@ -94,7 +114,12 @@ class BallTracker:
             if chosen_bbox is not None:
                 tracks[frame_num][1] = {"bbox": chosen_bbox}
 
-        save_stub(stub_path, tracks)
+        save_stub(
+            stub_path,
+            tracks,
+            job_id=job_id,
+            stage="ball_tracks",
+        )
         return tracks
 
     def remove_wrong_detections(

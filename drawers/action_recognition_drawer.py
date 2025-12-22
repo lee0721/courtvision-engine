@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import cv2
 import json
+import logging
 from typing import Sequence
 
 import numpy as np
 
 from configs import ACTION_STRIDE
+from utils.logging_utils import log_kv
+
+logger = logging.getLogger("courtvision.drawers.action_recognition")
 
 class ActionRecognitionDrawer:
     """
@@ -16,8 +20,18 @@ class ActionRecognitionDrawer:
     def __init__(self, labels_file: str = "action_recognition/labels_dict.json") -> None:
         # Load the mapping from label index to action label name
         self.action_predictions = {}
-        with open(labels_file, 'r') as f:
-            self.action_labels = json.load(f)
+        try:
+            with open(labels_file, "r") as f:
+                self.action_labels = json.load(f)
+        except Exception as exc:  # pragma: no cover - file missing
+            log_kv(
+                logger,
+                logging.ERROR,
+                "action_labels_load_failed",
+                labels_file=labels_file,
+                error=str(exc),
+            )
+            raise
 
     def set_predictions(self, action_predictions: dict[int, Sequence[int]]) -> None:
         """

@@ -1,8 +1,11 @@
 import argparse
 from configs import(
     STUBS_DEFAULT_PATH,
+    LOG_FILE,
+    LOG_LEVEL,
     OUTPUT_VIDEO_PATH,
 )
+from utils.logging_utils import setup_logging
 from video_analysis.video_analysis import VideoAnalysis
 
 def parse_args():
@@ -15,11 +18,13 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    setup_logging(LOG_LEVEL, LOG_FILE)
     args = parse_args()
     analyzer = VideoAnalysis(
         input_path=args.input_video,
         output_path=args.output_video,
-        stub_path=args.stub_path
+        stub_path=args.stub_path,
+        job_id="cli",
     )
     analyzer.run()
 

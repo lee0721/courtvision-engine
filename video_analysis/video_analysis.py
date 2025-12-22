@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import os
+import time
 
 from action_recognition import ActionRecognitionModel
 from arena_mark_detector import ArenaMarkDetector
@@ -32,6 +34,7 @@ from team_classifier import TeamClassifier
 from trackers import BallTracker, DeepSortPlayerTracker, PlayerTracker
 from trajectory_kinetics_analyzer import TrajectoryKineticsAnalyzer
 from utils import read_video, save_video
+from utils.logging_utils import log_kv
 
 from .types import (
     AnalysisResult,
@@ -51,212 +54,315 @@ class VideoAnalysis:
         output_path: str,
         stub_path: str,
         use_stubs: bool = True,
+        job_id: str | None = None,
     ) -> None:
         self.input_path = input_path
         self.output_path = output_path
         self.stub_path = stub_path
         self.use_stubs = use_stubs
+        self.job_id = job_id or "cli"
+        self.logger = logging.getLogger("courtvision.analysis")
+
+    def _log_stage_start(self, stage: str) -> float:
+        log_kv(
+            self.logger,
+            logging.INFO,
+            "stage_start",
+            job_id=self.job_id,
+            stage=stage,
+        )
+        return time.perf_counter()
+
+    def _log_stage_end(
+        self,
+        stage: str,
+        start_time: float,
+        cache_hit: bool | None = None,
+        frame_id: int | None = None,
+    ) -> float:
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        log_kv(
+            self.logger,
+            logging.INFO,
+            "stage_end",
+            job_id=self.job_id,
+            stage=stage,
+            duration_ms=round(duration_ms, 2),
+            cache_hit=cache_hit,
+            frame_id=frame_id,
+        )
+        return duration_ms
 
     def run(self) -> dict[str, object]:
-        # Read video
-        video_frames = read_video(self.input_path)
-        if not video_frames:
-            raise ValueError(f"No frames read from input video: {self.input_path}")
+        stage_timings: dict[str, float] = {}
+        current_stage = "read_video"
 
-        # Initialize trackers
-        # player_tracker = DeepSortPlayerTracker(PLAYER_DETECTOR_PATH)
-        player_tracker = PlayerTracker(PLAYER_DETECTOR_PATH)
-        ball_tracker = BallTracker(BALL_DETECTOR_PATH)
+        try:
+            # Read video
+            start = self._log_stage_start(current_stage)
+            video_frames = read_video(self.input_path)
+            if not video_frames:
+                raise ValueError(f"No frames read from input video: {self.input_path}")
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Initialize keypoint detector
-        mark_detector = ArenaMarkDetector(ARENA_MARK_DETECTOR_PATH)
+            # Initialize trackers
+            # player_tracker = DeepSortPlayerTracker(PLAYER_DETECTOR_PATH)
+            current_stage = "init_models"
+            start = self._log_stage_start(current_stage)
+            player_tracker = PlayerTracker(PLAYER_DETECTOR_PATH)
+            ball_tracker = BallTracker(BALL_DETECTOR_PATH)
 
-        # Initialize action recognition model
-        action_recognition_model = ActionRecognitionModel(
-            ACTION_RECOGNITION_MODEL_PATH,
-            device=ACTION_DEVICE,
-        )
+            # Initialize keypoint detector
+            mark_detector = ArenaMarkDetector(ARENA_MARK_DETECTOR_PATH)
 
-        # Run detectors
-        player_tracks = player_tracker.get_object_tracks(
-            video_frames,
-            read_from_stub=self.use_stubs,
-            stub_path=os.path.join(self.stub_path, "player_track_stubs.pkl"),
-        )
-        ball_tracks = ball_tracker.get_object_tracks(
-            video_frames,
-            read_from_stub=self.use_stubs,
-            stub_path=os.path.join(self.stub_path, "ball_track_stubs.pkl"),
-        )
+            # Initialize action recognition model
+            action_recognition_model = ActionRecognitionModel(
+                ACTION_RECOGNITION_MODEL_PATH,
+                device=ACTION_DEVICE,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Run keypoint extractor
-        arena_marks_per_frame = mark_detector.extract_marks(
-            video_frames,
-            read_from_stub=self.use_stubs,
-            stub_path=os.path.join(self.stub_path, "court_key_points_stub.pkl"),
-        )
+            # Run detectors
+            current_stage = "tracking"
+            start = self._log_stage_start(current_stage)
+            player_tracks = player_tracker.get_object_tracks(
+                video_frames,
+                read_from_stub=self.use_stubs,
+                stub_path=os.path.join(self.stub_path, "player_track_stubs.pkl"),
+                job_id=self.job_id,
+            )
+            ball_tracks = ball_tracker.get_object_tracks(
+                video_frames,
+                read_from_stub=self.use_stubs,
+                stub_path=os.path.join(self.stub_path, "ball_track_stubs.pkl"),
+                job_id=self.job_id,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Remove wrong ball detections
-        ball_tracks = ball_tracker.remove_wrong_detections(ball_tracks)
-        # Interpolate ball tracks
-        ball_tracks = ball_tracker.interpolate_ball_positions(ball_tracks)
+            # Run keypoint extractor
+            current_stage = "arena_marks"
+            start = self._log_stage_start(current_stage)
+            arena_marks_per_frame = mark_detector.extract_marks(
+                video_frames,
+                read_from_stub=self.use_stubs,
+                stub_path=os.path.join(self.stub_path, "court_key_points_stub.pkl"),
+                job_id=self.job_id,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Assign player teams
-        team_classifier = TeamClassifier(
-            team_1_class_name=TEAM_1_CLASS_NAME,
-            team_2_class_name=TEAM_2_CLASS_NAME,
-        )
-        player_assignment = team_classifier.get_player_teams_across_frames(
-            video_frames,
-            player_tracks,
-            read_from_stub=self.use_stubs,
-            stub_path=os.path.join(self.stub_path, "player_assignment_stub.pkl"),
-        )
+            # Remove wrong ball detections
+            current_stage = "ball_processing"
+            start = self._log_stage_start(current_stage)
+            ball_tracks = ball_tracker.remove_wrong_detections(ball_tracks)
+            # Interpolate ball tracks
+            ball_tracks = ball_tracker.interpolate_ball_positions(ball_tracks)
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Ball acquisition
-        ball_aquisition_detector = BallAquisitionDetector()
-        ball_aquisition = ball_aquisition_detector.detect_ball_possession(
-            player_tracks,
-            ball_tracks,
-        )
+            # Assign player teams
+            current_stage = "team_assignment"
+            start = self._log_stage_start(current_stage)
+            team_classifier = TeamClassifier(
+                team_1_class_name=TEAM_1_CLASS_NAME,
+                team_2_class_name=TEAM_2_CLASS_NAME,
+            )
+            player_assignment = team_classifier.get_player_teams_across_frames(
+                video_frames,
+                player_tracks,
+                read_from_stub=self.use_stubs,
+                stub_path=os.path.join(self.stub_path, "player_assignment_stub.pkl"),
+                job_id=self.job_id,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Detect passes
-        ball_event_detector = BallEventDetector()
-        passes = ball_event_detector.detect_passes(ball_aquisition, player_assignment)
-        interceptions = ball_event_detector.detect_interceptions(
-            ball_aquisition,
-            player_assignment,
-        )
+            # Ball acquisition
+            current_stage = "ball_acquisition"
+            start = self._log_stage_start(current_stage)
+            ball_aquisition_detector = BallAquisitionDetector()
+            ball_aquisition = ball_aquisition_detector.detect_ball_possession(
+                player_tracks,
+                ball_tracks,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Tactical view
-        perspective_transformer = PerspectiveTransformer(
-            court_image_path=COURT_IMAGE_PATH,
-        )
+            # Detect passes
+            current_stage = "ball_events"
+            start = self._log_stage_start(current_stage)
+            ball_event_detector = BallEventDetector()
+            passes = ball_event_detector.detect_passes(ball_aquisition, player_assignment)
+            interceptions = ball_event_detector.detect_interceptions(
+                ball_aquisition,
+                player_assignment,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        arena_marks_per_frame = perspective_transformer.validate_keypoints(
-            arena_marks_per_frame,
-        )
-        tactical_player_positions = perspective_transformer.transform_players_to_tactical_view(
-            arena_marks_per_frame,
-            player_tracks,
-        )
+            # Tactical view
+            current_stage = "tactical_view"
+            start = self._log_stage_start(current_stage)
+            perspective_transformer = PerspectiveTransformer(
+                court_image_path=COURT_IMAGE_PATH,
+            )
 
-        # Speed and distance calculator
-        trajectory_kinetics_analyzer = TrajectoryKineticsAnalyzer(
-            perspective_transformer.width,
-            perspective_transformer.height,
-            perspective_transformer.actual_width_in_meters,
-            perspective_transformer.actual_height_in_meters,
-        )
-        player_distances_per_frame = trajectory_kinetics_analyzer.calculate_distance(
-            tactical_player_positions,
-        )
-        player_speed_per_frame = trajectory_kinetics_analyzer.calculate_speed(
-            player_distances_per_frame,
-        )
+            arena_marks_per_frame = perspective_transformer.validate_keypoints(
+                arena_marks_per_frame,
+            )
+            tactical_player_positions = perspective_transformer.transform_players_to_tactical_view(
+                arena_marks_per_frame,
+                player_tracks,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Run action recognition
-        action_predictions = action_recognition_model.predict(
-            video_frames,
-            player_tracks,
-            read_from_stub=self.use_stubs,
-            stub_path=os.path.join(
-                self.stub_path,
-                "action_recognition_predictions.pkl",
-            ),
-        )
+            # Speed and distance calculator
+            current_stage = "trajectory_metrics"
+            start = self._log_stage_start(current_stage)
+            trajectory_kinetics_analyzer = TrajectoryKineticsAnalyzer(
+                perspective_transformer.width,
+                perspective_transformer.height,
+                perspective_transformer.actual_width_in_meters,
+                perspective_transformer.actual_height_in_meters,
+            )
+            player_distances_per_frame = trajectory_kinetics_analyzer.calculate_distance(
+                tactical_player_positions,
+            )
+            player_speed_per_frame = trajectory_kinetics_analyzer.calculate_speed(
+                player_distances_per_frame,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Initialize drawers
-        player_tracks_drawer = PlayerTracksDrawer(
-            team_1_color=team_classifier.team_1_color_rgb,
-            team_2_color=team_classifier.team_2_color_rgb,
-        )
-        ball_tracks_drawer = BallTracksDrawer()
-        arena_mark_drawer = ArenaMarkDrawer()
-        team_ball_control_drawer = TeamBallControlDrawer()
-        frame_number_drawer = FrameNumberDrawer()
-        ball_event_drawer = BallEventDrawer()
-        perspective_drawer = PerspectiveOverlayDrawer(
-            team_1_color=team_classifier.team_1_color_rgb,
-            team_2_color=team_classifier.team_2_color_rgb,
-        )
-        trajectory_kinetics_drawer = TrajectoryKineticsDrawer()
+            # Run action recognition
+            current_stage = "action_recognition"
+            start = self._log_stage_start(current_stage)
+            action_predictions = action_recognition_model.predict(
+                video_frames,
+                player_tracks,
+                read_from_stub=self.use_stubs,
+                stub_path=os.path.join(
+                    self.stub_path,
+                    "action_recognition_predictions.pkl",
+                ),
+                job_id=self.job_id,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        # Initialize ActionRecognitionDrawer and set predictions
-        action_recognition_drawer = ActionRecognitionDrawer()
-        action_recognition_drawer.set_predictions(action_predictions)
+            # Initialize drawers
+            current_stage = "drawing"
+            start = self._log_stage_start(current_stage)
+            player_tracks_drawer = PlayerTracksDrawer(
+                team_1_color=team_classifier.team_1_color_rgb,
+                team_2_color=team_classifier.team_2_color_rgb,
+            )
+            ball_tracks_drawer = BallTracksDrawer()
+            arena_mark_drawer = ArenaMarkDrawer()
+            team_ball_control_drawer = TeamBallControlDrawer()
+            frame_number_drawer = FrameNumberDrawer()
+            ball_event_drawer = BallEventDrawer()
+            perspective_drawer = PerspectiveOverlayDrawer(
+                team_1_color=team_classifier.team_1_color_rgb,
+                team_2_color=team_classifier.team_2_color_rgb,
+            )
+            trajectory_kinetics_drawer = TrajectoryKineticsDrawer()
 
-        # Draw object tracks
-        output_video_frames = player_tracks_drawer.draw(
-            video_frames,
-            player_tracks,
-            player_assignment,
-            ball_aquisition,
-        )
-        output_video_frames = ball_tracks_drawer.draw(output_video_frames, ball_tracks)
+            # Initialize ActionRecognitionDrawer and set predictions
+            action_recognition_drawer = ActionRecognitionDrawer()
+            action_recognition_drawer.set_predictions(action_predictions)
 
-        # Draw team ball control
-        output_video_frames = team_ball_control_drawer.draw(
-            output_video_frames,
-            player_assignment,
-            ball_aquisition,
-        )
+            # Draw object tracks
+            output_video_frames = player_tracks_drawer.draw(
+                video_frames,
+                player_tracks,
+                player_assignment,
+                ball_aquisition,
+            )
+            output_video_frames = ball_tracks_drawer.draw(output_video_frames, ball_tracks)
 
-        # Draw passes and interceptions
-        output_video_frames = ball_event_drawer.draw(
-            output_video_frames,
-            passes,
-            interceptions,
-        )
+            # Draw team ball control
+            output_video_frames = team_ball_control_drawer.draw(
+                output_video_frames,
+                player_assignment,
+                ball_aquisition,
+            )
 
-        # Draw keypoints
-        output_video_frames = arena_mark_drawer.draw(
-            output_video_frames,
-            arena_marks_per_frame,
-        )
+            # Draw passes and interceptions
+            output_video_frames = ball_event_drawer.draw(
+                output_video_frames,
+                passes,
+                interceptions,
+            )
 
-        # Draw tactical view
-        output_video_frames = perspective_drawer.draw(
-            output_video_frames,
-            perspective_transformer.court_image_path,
-            perspective_transformer.width,
-            perspective_transformer.height,
-            perspective_transformer.key_points,
-            tactical_player_positions,
-            player_assignment,
-            ball_aquisition,
-        )
+            # Draw keypoints
+            output_video_frames = arena_mark_drawer.draw(
+                output_video_frames,
+                arena_marks_per_frame,
+            )
 
-        # Draw frame number
-        output_video_frames = frame_number_drawer.draw(output_video_frames)
+            # Draw tactical view
+            output_video_frames = perspective_drawer.draw(
+                output_video_frames,
+                perspective_transformer.court_image_path,
+                perspective_transformer.width,
+                perspective_transformer.height,
+                perspective_transformer.key_points,
+                tactical_player_positions,
+                player_assignment,
+                ball_aquisition,
+            )
 
-        # Speed and distance drawer
-        output_video_frames = trajectory_kinetics_drawer.draw(
-            output_video_frames,
-            player_tracks,
-            player_distances_per_frame,
-            player_speed_per_frame,
-        )
+            # Draw frame number
+            output_video_frames = frame_number_drawer.draw(output_video_frames)
 
-        # Draw action recognition results
-        output_video_frames = action_recognition_drawer.draw(
-            output_video_frames,
-            player_tracks,
-        )
+            # Speed and distance drawer
+            output_video_frames = trajectory_kinetics_drawer.draw(
+                output_video_frames,
+                player_tracks,
+                player_distances_per_frame,
+                player_speed_per_frame,
+            )
 
-        # Save video
-        save_video(output_video_frames, self.output_path)
+            # Draw action recognition results
+            output_video_frames = action_recognition_drawer.draw(
+                output_video_frames,
+                player_tracks,
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
 
-        analysis_result = self._build_analysis_result(
-            passes,
-            interceptions,
-            ball_aquisition,
-            player_assignment,
-            player_distances_per_frame,
-            player_speed_per_frame,
-            len(video_frames),
-        )
-        return analysis_result.to_dict()
+            # Save video
+            current_stage = "save_video"
+            start = self._log_stage_start(current_stage)
+            save_video(output_video_frames, self.output_path)
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+
+            current_stage = "build_result"
+            start = self._log_stage_start(current_stage)
+            analysis_result = self._build_analysis_result(
+                passes,
+                interceptions,
+                ball_aquisition,
+                player_assignment,
+                player_distances_per_frame,
+                player_speed_per_frame,
+                len(video_frames),
+            )
+            stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+
+            total_ms = sum(stage_timings.values())
+            log_kv(
+                self.logger,
+                logging.INFO,
+                "analysis_complete",
+                job_id=self.job_id,
+                duration_ms=round(total_ms, 2),
+                stages=stage_timings,
+            )
+            return analysis_result.to_dict()
+        except Exception as exc:  # pragma: no cover - defensive
+            log_kv(
+                self.logger,
+                logging.ERROR,
+                "analysis_failed",
+                job_id=self.job_id,
+                stage=current_stage,
+                error=str(exc),
+            )
+            raise
 
     def _build_analysis_result(
         self,

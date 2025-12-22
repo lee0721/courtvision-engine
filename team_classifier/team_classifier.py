@@ -5,13 +5,17 @@ import cv2
 from transformers import CLIPProcessor, CLIPModel
 
 import sys 
+import logging
 from typing import TYPE_CHECKING, Sequence
 
 if TYPE_CHECKING:
     import numpy as np
 
 sys.path.append('../')
+from utils.logging_utils import log_kv
 from utils import read_stub, save_stub
+
+logger = logging.getLogger("courtvision.team_classifier")
 
 class TeamClassifier:
     """
@@ -53,8 +57,17 @@ class TeamClassifier:
         self.team_2_color_rgb = self.color_name_to_rgb.get(self.team_2_class_name, [0, 0, 139])
 
         # Load CLIP model for visual classification
-        self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
-        self.processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
+        try:
+            self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
+            self.processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
+        except Exception as exc:  # pragma: no cover - model load
+            log_kv(
+                logger,
+                logging.ERROR,
+                "team_model_load_failed",
+                error=str(exc),
+            )
+            raise
 
         # Used to cache per-player classification
         self.player_team_dict = {}
@@ -131,6 +144,7 @@ class TeamClassifier:
         player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
         read_from_stub: bool = False,
         stub_path: str | None = None,
+        job_id: str | None = None,
     ) -> list[dict[int, int]]:
         """
         Assigns teams to all players across all frames, with optional caching via stub.
@@ -144,7 +158,12 @@ class TeamClassifier:
         Returns:
             list: A list where each entry is a dict mapping player IDs to team IDs for that frame.
         """
-        player_assignment = read_stub(read_from_stub, stub_path)
+        player_assignment = read_stub(
+            read_from_stub,
+            stub_path,
+            job_id=job_id,
+            stage="team_assignment",
+        )
         if player_assignment is not None and len(player_assignment) == len(video_frames):
             return player_assignment
 
@@ -160,5 +179,10 @@ class TeamClassifier:
                 team = self.get_player_team(video_frames[frame_num], track['bbox'], player_id)
                 player_assignment[frame_num][player_id] = team
 
-        save_stub(stub_path, player_assignment)
+        save_stub(
+            stub_path,
+            player_assignment,
+            job_id=job_id,
+            stage="team_assignment",
+        )
         return player_assignment

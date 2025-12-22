@@ -11,6 +11,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from configs.settings import get_settings
+from utils.logging_utils import setup_logging
 
 from .executor import BackgroundExecutor
 from .jobs import JobRecord, JobStore
@@ -39,6 +40,7 @@ DEFAULT_STUB_DIR = _resolve_path(settings.stubs_dir)
 DEFAULT_DATA_DIR = _resolve_path(settings.data_dir)
 JOB_DB_PATH = _resolve_path(settings.jobs_db_path)
 LOG_LEVEL = settings.log_level.upper()
+LOG_FILE = settings.log_file
 
 TAGS_METADATA = [
     {"name": "Analysis", "description": "Submit analysis jobs."},
@@ -54,13 +56,8 @@ app = FastAPI(
 job_store = JobStore(JOB_DB_PATH)
 executor = BackgroundExecutor(job_store)
 logger = logging.getLogger("courtvision.api")
+setup_logging(LOG_LEVEL, LOG_FILE)
 logger.setLevel(LOG_LEVEL)
-
-if not logging.getLogger().handlers:
-    logging.basicConfig(
-        level=LOG_LEVEL,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
 
 
 def _model_dump(model) -> dict:

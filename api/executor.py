@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
 from video_analysis.video_analysis import VideoAnalysis
+from utils.logging_utils import log_kv
 
 from .jobs import JobStore
 from .schemas import AnalysisRequest, JobStatus
@@ -40,7 +41,19 @@ def _download_input_video(input_url: str, job_id: str) -> Path:
         filename = f"{filename}.mp4"
     destination = INPUT_VIDEOS_DIR / filename
     logger.info("job_id=%s downloading input_url=%s destination=%s", job_id, input_url, destination)
-    urlretrieve(input_url, destination)
+    try:
+        urlretrieve(input_url, destination)
+    except Exception as exc:  # pragma: no cover - network IO
+        log_kv(
+            logger,
+            logging.ERROR,
+            "input_download_failed",
+            job_id=job_id,
+            input_url=input_url,
+            destination=str(destination),
+            error=str(exc),
+        )
+        raise
     return destination
 
 
@@ -64,8 +77,18 @@ def _to_serializable(value):
 def _write_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     serializable = _to_serializable(data)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(serializable, handle, indent=2, ensure_ascii=True)
+    try:
+        with path.open("w", encoding="utf-8") as handle:
+            json.dump(serializable, handle, indent=2, ensure_ascii=True)
+    except Exception as exc:  # pragma: no cover - filesystem issues
+        log_kv(
+            logger,
+            logging.ERROR,
+            "result_write_failed",
+            result_json_path=str(path),
+            error=str(exc),
+        )
+        raise
 
 
 class BackgroundExecutor:
@@ -120,6 +143,7 @@ class BackgroundExecutor:
                 output_path=str(output_video_path),
                 stub_path=str(stub_path),
                 use_stubs=request.use_stubs,
+                job_id=job_id,
             )
             results = analyzer.run()
             results = results or {}

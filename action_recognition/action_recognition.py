@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Sequence
 
@@ -12,11 +13,14 @@ from torchvision.models.video import R2Plus1D_18_Weights, r2plus1d_18
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
 from configs import ACTION_CLIP_LEN, ACTION_STRIDE
+from utils.logging_utils import log_kv
 from utils.stubs_utils import read_stub, save_stub
 # Load label dictionary for action classes
 LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "labels_dict.json")
 with open(LABELS_DICT_PATH, "r") as f:
     LABELS_DICT = json.load(f)
+
+logger = logging.getLogger("courtvision.action_recognition")
     
 class ActionRecognitionModel:
     def __init__(self, model_path: str, device: str | None = None) -> None:
@@ -33,9 +37,19 @@ class ActionRecognitionModel:
         )
         
         # Load model weights (support both raw and checkpoint formats)
-        checkpoint = torch.load(model_path, map_location=self.device)
-        state_dict = checkpoint['state_dict'] if 'state_dict' in checkpoint else checkpoint
-        model.load_state_dict(state_dict, strict=False)
+        try:
+            checkpoint = torch.load(model_path, map_location=self.device)
+            state_dict = checkpoint["state_dict"] if "state_dict" in checkpoint else checkpoint
+            model.load_state_dict(state_dict, strict=False)
+        except Exception as exc:  # pragma: no cover - model file issues
+            log_kv(
+                logger,
+                logging.ERROR,
+                "action_model_load_failed",
+                model_path=model_path,
+                error=str(exc),
+            )
+            raise
         
         self.model = model.to(self.device).eval()
         
@@ -57,9 +71,15 @@ class ActionRecognitionModel:
         player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
         read_from_stub: bool = False,
         stub_path: str | None = None,
+        job_id: str | None = None,
     ) -> dict[int, list[int]]:
         # Try loading results from cache if available
-        predictions = read_stub(read_from_stub, stub_path)
+        predictions = read_stub(
+            read_from_stub,
+            stub_path,
+            job_id=job_id,
+            stage="action_recognition",
+        )
         if predictions is not None:
             return predictions
 
@@ -82,10 +102,26 @@ class ActionRecognitionModel:
         results = {}
         for player_id, frames in player_clips.items():
             clips = []
-            print(f"[DEBUG] player_id: {player_id}, total_frames: {len(frames)}")
+            log_kv(
+                logger,
+                logging.DEBUG,
+                "action_clip_summary",
+                job_id=job_id,
+                stage="action_recognition",
+                player_id=player_id,
+                total_frames=len(frames),
+            )
             for i in range(0, len(frames) - self.clip_len + 1, self.stride):
                 clips.append(frames[i:i + self.clip_len])
-            print(f"[DEBUG] player_id: {player_id}, num_clips: {len(clips)}")
+            log_kv(
+                logger,
+                logging.DEBUG,
+                "action_clip_count",
+                job_id=job_id,
+                stage="action_recognition",
+                player_id=player_id,
+                num_clips=len(clips),
+            )
 
             if not clips:
                 continue
@@ -98,11 +134,25 @@ class ActionRecognitionModel:
                 outputs = self.model(input_tensor)
                 preds = torch.argmax(outputs, dim=1).cpu().tolist()
                 label_names = [LABELS_DICT[str(p)] for p in preds]
-                print(f"[DEBUG] player_id: {player_id}, preds: {preds}, labels: {label_names}")
+                log_kv(
+                    logger,
+                    logging.DEBUG,
+                    "action_clip_predictions",
+                    job_id=job_id,
+                    stage="action_recognition",
+                    player_id=player_id,
+                    preds=preds,
+                    labels=label_names,
+                )
             results[player_id] = preds
 
         # Save results to cache 
-        save_stub(stub_path, results)
+        save_stub(
+            stub_path,
+            results,
+            job_id=job_id,
+            stage="action_recognition",
+        )
         return results
 
     def _preprocess_clips(self, clips: Sequence[Sequence[np.ndarray]]) -> torch.Tensor:

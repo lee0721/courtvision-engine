@@ -49,3 +49,7 @@ COURT_HEIGHT_M = _settings.court_height_m
 # Trajectory analysis defaults
 SPEED_WINDOW_SIZE = _settings.speed_window_size
 ANALYSIS_FPS = _settings.analysis_fps
+
+# Logging defaults
+LOG_LEVEL = _settings.log_level
+LOG_FILE = _settings.log_file

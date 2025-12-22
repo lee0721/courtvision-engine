@@ -5,11 +5,15 @@ import supervision as sv
 import numpy as np
 from deep_sort_realtime.deepsort_tracker import DeepSort
 import sys 
+import logging
 from typing import Any, Sequence
 
 sys.path.append('../')
+from utils.logging_utils import log_kv
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
+
+logger = logging.getLogger("courtvision.deepsort_tracker")
 
 class DeepSortPlayerTracker:
     """
@@ -35,7 +39,17 @@ class DeepSortPlayerTracker:
             n_init (int): Number of detections before confirming a track.
             nn_budget (int): Size of appearance feature buffer.
         """
-        self.model = YOLO(model_path)
+        try:
+            self.model = YOLO(model_path)
+        except Exception as exc:  # pragma: no cover - model load
+            log_kv(
+                logger,
+                logging.ERROR,
+                "player_model_load_failed",
+                model_path=model_path,
+                error=str(exc),
+            )
+            raise
         self.tracker = DeepSort(max_age=max_age, n_init=n_init, nn_budget=nn_budget)
 
     def detect_frames(self, frames: Sequence["np.ndarray"]) -> list[Any]:
@@ -63,6 +77,7 @@ class DeepSortPlayerTracker:
         frames: Sequence["np.ndarray"],
         read_from_stub: bool = False,
         stub_path: str | None = None,
+        job_id: str | None = None,
     ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Run tracking on input video frames and return consistent player IDs per frame.
@@ -75,7 +90,12 @@ class DeepSortPlayerTracker:
         Returns:
             list: Per-frame list of tracked player IDs and their bounding boxes.
         """
-        tracks = read_stub(read_from_stub, stub_path)
+        tracks = read_stub(
+            read_from_stub,
+            stub_path,
+            job_id=job_id,
+            stage="player_tracks",
+        )
         if tracks is not None and len(tracks) == len(frames):
             return tracks
 
@@ -111,5 +131,10 @@ class DeepSortPlayerTracker:
                 if cls_names[track.det_class] == 'Player':
                     tracks[frame_num][track_id] = {"bbox": bbox.tolist()}
 
-        save_stub(stub_path, tracks)
+        save_stub(
+            stub_path,
+            tracks,
+            job_id=job_id,
+            stage="player_tracks",
+        )
         return tracks

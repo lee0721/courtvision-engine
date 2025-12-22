@@ -3,14 +3,18 @@ from __future__ import annotations
 from ultralytics import YOLO
 import supervision as sv
 import sys 
+import logging
 from typing import Any, Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import numpy as np
 
 sys.path.append('../')
+from utils.logging_utils import log_kv
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
+
+logger = logging.getLogger("courtvision.player_tracker")
 
 class PlayerTracker:
     """
@@ -26,7 +30,17 @@ class PlayerTracker:
         Args:
             model_path (str): Path to the YOLO model weights.
         """
-        self.model = YOLO(model_path) 
+        try:
+            self.model = YOLO(model_path)
+        except Exception as exc:  # pragma: no cover - model load
+            log_kv(
+                logger,
+                logging.ERROR,
+                "player_model_load_failed",
+                model_path=model_path,
+                error=str(exc),
+            )
+            raise
         self.tracker = sv.ByteTrack()
 
     def detect_frames(self, frames: Sequence["np.ndarray"]) -> list[Any]:
@@ -54,6 +68,7 @@ class PlayerTracker:
         frames: Sequence["np.ndarray"],
         read_from_stub: bool = False,
         stub_path: str | None = None,
+        job_id: str | None = None,
     ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Get player tracking results for a sequence of frames with optional caching.
@@ -67,7 +82,12 @@ class PlayerTracker:
             list: List of dictionaries containing player tracking information for each frame,
                 where each dictionary maps player IDs to their bounding box coordinates.
         """
-        tracks = read_stub(read_from_stub,stub_path)
+        tracks = read_stub(
+            read_from_stub,
+            stub_path,
+            job_id=job_id,
+            stage="player_tracks",
+        )
         if tracks is not None:
             if len(tracks) == len(frames):
                 return tracks
@@ -96,5 +116,10 @@ class PlayerTracker:
                 if cls_id == cls_names_inv['player']: #test
                     tracks[frame_num][track_id] = {"bbox":bbox}
         
-        save_stub(stub_path,tracks)
+        save_stub(
+            stub_path,
+            tracks,
+            job_id=job_id,
+            stage="player_tracks",
+        )
         return tracks

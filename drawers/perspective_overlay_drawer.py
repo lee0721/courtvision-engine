@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import cv2 
+import logging
 from typing import Sequence
 
 import numpy as np
+
+from utils.logging_utils import log_kv
+
+logger = logging.getLogger("courtvision.drawers.perspective")
 
 class PerspectiveOverlayDrawer:
     """
@@ -63,6 +68,14 @@ class PerspectiveOverlayDrawer:
         
         # Load and resize tactical court image
         court_image = cv2.imread(court_image_path)
+        if court_image is None:
+            log_kv(
+                logger,
+                logging.ERROR,
+                "court_image_load_failed",
+                court_image_path=court_image_path,
+            )
+            raise ValueError(f"Failed to load court image: {court_image_path}")
         court_image = cv2.resize(court_image, (width, height))
 
         output_video_frames = []

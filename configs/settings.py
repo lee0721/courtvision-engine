@@ -48,6 +48,7 @@ class Settings(BaseSettings):
 
     action_device: str | None = None
     log_level: str = "INFO"
+    log_file: str | None = None
 
 
 @lru_cache(maxsize=1)

@@ -7,14 +7,18 @@ processed frames back to video files, with support for common video formats.
 
 from __future__ import annotations
 
+import logging
 import cv2
 import os
 from typing import TYPE_CHECKING, Sequence
 
 from configs import OUTPUT_VIDEO_FPS
+from utils.logging_utils import log_kv
 
 if TYPE_CHECKING:
     import numpy as np
+
+logger = logging.getLogger("courtvision.video_utils")
 
 def read_video(video_path: str) -> list["np.ndarray"]:
     """
@@ -27,12 +31,41 @@ def read_video(video_path: str) -> list["np.ndarray"]:
         list: List of video frames as numpy arrays.
     """
     cap = cv2.VideoCapture(video_path)
-    frames = []
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frames.append(frame)
+    if not cap.isOpened():
+        log_kv(logger, logging.ERROR, "video_open_failed", video_path=video_path)
+        raise ValueError(f"Failed to open video: {video_path}")
+
+    frames: list["np.ndarray"] = []
+    frame_id = 0
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if frame is None or frame.size == 0:
+                log_kv(
+                    logger,
+                    logging.WARNING,
+                    "empty_frame",
+                    video_path=video_path,
+                    frame_id=frame_id,
+                )
+                frame_id += 1
+                continue
+            frames.append(frame)
+            frame_id += 1
+    except Exception as exc:  # pragma: no cover - defensive
+        log_kv(
+            logger,
+            logging.ERROR,
+            "video_read_failed",
+            video_path=video_path,
+            frame_id=frame_id,
+            error=str(exc),
+        )
+        raise
+    finally:
+        cap.release()
     return frames
 
 def save_video(ouput_video_frames: Sequence["np.ndarray"], output_video_path: str) -> None:
@@ -46,8 +79,13 @@ def save_video(ouput_video_frames: Sequence["np.ndarray"], output_video_path: st
         output_video_path (str): Path where the video should be saved.
     """
     # If folder doesn't exist, create it
-    if not os.path.exists(os.path.dirname(output_video_path)):
-        os.makedirs(os.path.dirname(output_video_path))
+    if not ouput_video_frames:
+        log_kv(logger, logging.ERROR, "video_save_failed", error="no_frames")
+        raise ValueError("No frames provided for output video.")
+
+    output_dir = os.path.dirname(output_video_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(
@@ -56,6 +94,21 @@ def save_video(ouput_video_frames: Sequence["np.ndarray"], output_video_path: st
         OUTPUT_VIDEO_FPS,
         (ouput_video_frames[0].shape[1], ouput_video_frames[0].shape[0]),
     )
-    for frame in ouput_video_frames:
-        out.write(frame)
-    out.release()
+    if not out.isOpened():
+        log_kv(logger, logging.ERROR, "video_writer_open_failed", output_video_path=output_video_path)
+        raise ValueError(f"Failed to open output video: {output_video_path}")
+
+    try:
+        for frame in ouput_video_frames:
+            out.write(frame)
+    except Exception as exc:  # pragma: no cover - filesystem issues
+        log_kv(
+            logger,
+            logging.ERROR,
+            "video_write_failed",
+            output_video_path=output_video_path,
+            error=str(exc),
+        )
+        raise
+    finally:
+        out.release()

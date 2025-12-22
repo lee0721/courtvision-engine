@@ -14,6 +14,11 @@ from typing import Sequence
 
 sys.path.append('../')
 from utils import get_center_of_bbox, get_bbox_width, get_foot_position
+from utils.logging_utils import log_kv
+
+import logging
+
+logger = logging.getLogger("courtvision.drawers")
 
 def draw_traingle(
     frame: np.ndarray,
@@ -75,7 +80,15 @@ def draw_ellipse(
             lineType=cv2.LINE_4
         )
     except cv2.error as e:
-        print(f"[OpenCV Error] Failed to draw ellipse: track_id={track_id} bbox={bbox} width={width} error={e}")
+        log_kv(
+            logger,
+            logging.WARNING,
+            "draw_ellipse_failed",
+            track_id=track_id,
+            bbox=bbox,
+            width=width,
+            error=str(e),
+        )
 
     # Track ID label
     if track_id is not None:
