@@ -1,12 +1,23 @@
+from __future__ import annotations
+
+from typing import Sequence
+
 import cv2
+import numpy as np
 
 class TrajectoryKineticsDrawer():
     """
     A drawer class that overlays player speed (km/h) and cumulative distance (m) on video frames.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         pass 
-    def draw(self, video_frames,player_tracks,player_distances_per_frame,player_speed_per_frame):
+    def draw(
+        self,
+        video_frames: Sequence[np.ndarray],
+        player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+        player_distances_per_frame: Sequence[dict[int, float]],
+        player_speed_per_frame: Sequence[dict[int, float]],
+    ) -> list[np.ndarray]:
         """
         Draws speed and total distance for each player onto the video frames.
 

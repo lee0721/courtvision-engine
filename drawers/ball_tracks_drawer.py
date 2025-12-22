@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Sequence
+
+import numpy as np
+
 from .utils import draw_traingle
 
 class BallTracksDrawer:
@@ -9,13 +15,17 @@ class BallTracksDrawer:
         ball_pointer_color (tuple): BGR color used to draw the triangle pointer for the ball.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the BallTracksDrawer with default green pointer color.
         """
         self.ball_pointer_color = (0, 255, 0)  # Green
 
-    def draw(self, video_frames, tracks):
+    def draw(
+        self,
+        video_frames: Sequence[np.ndarray],
+        tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+    ) -> list[np.ndarray]:
         """
         Overlay ball tracking results onto each video frame.
 

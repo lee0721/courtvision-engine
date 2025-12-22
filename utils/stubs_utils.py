@@ -5,10 +5,13 @@ This module provides utility functions to save and load intermediate processing 
 which helps avoid redundant computations and speeds up development iterations.
 """
 
+from __future__ import annotations
+
 import os 
 import pickle
+from typing import Any
 
-def save_stub(stub_path,object):
+def save_stub(stub_path: str | None, object: Any) -> None:
     """
     Save a Python object to disk at the specified path.
 
@@ -22,10 +25,10 @@ def save_stub(stub_path,object):
         os.makedirs(os.path.dirname(stub_path))
 
     if stub_path is not None:
-        with open(stub_path,'wb') as f:
-            pickle.dump(object,f)
+        with open(stub_path, "wb") as f:
+            pickle.dump(object, f)
 
-def read_stub(read_from_stub,stub_path):
+def read_stub(read_from_stub: bool, stub_path: str | None) -> Any | None:
     """
     Read a previously saved Python object from disk if available.
 
@@ -37,7 +40,7 @@ def read_stub(read_from_stub,stub_path):
         object: The loaded Python object if successful, None otherwise.
     """
     if read_from_stub and stub_path is not None and os.path.exists(stub_path):
-        with open(stub_path,'rb') as f:
+        with open(stub_path, "rb") as f:
             object = pickle.load(f)
             return object
     return None

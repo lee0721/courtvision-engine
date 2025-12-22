@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from ultralytics import YOLO
 import supervision as sv
 import numpy as np
 import pandas as pd
 import sys 
+from typing import Any, Sequence
+
 sys.path.append('../')
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
@@ -15,7 +19,7 @@ class BallTracker:
     in batches, and refine tracking results through filtering and interpolation.
     """
 
-    def __init__(self, model_path):
+    def __init__(self, model_path: str) -> None:
         """
         Initialize the BallTracker with a specified YOLO model.
 
@@ -24,7 +28,7 @@ class BallTracker:
         """
         self.model = YOLO(model_path)
 
-    def detect_frames(self, frames):
+    def detect_frames(self, frames: Sequence["np.ndarray"]) -> list[Any]:
         """
         Detect the ball in a batch of video frames using YOLO model.
 
@@ -44,7 +48,12 @@ class BallTracker:
             detections += detections_batch
         return detections
 
-    def get_object_tracks(self, frames, read_from_stub=False, stub_path=None):
+    def get_object_tracks(
+        self,
+        frames: Sequence["np.ndarray"],
+        read_from_stub: bool = False,
+        stub_path: str | None = None,
+    ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Generate ball tracking results from frames with optional stub caching.
 
@@ -88,7 +97,10 @@ class BallTracker:
         save_stub(stub_path, tracks)
         return tracks
 
-    def remove_wrong_detections(self, ball_positions):
+    def remove_wrong_detections(
+        self,
+        ball_positions: list[dict[int, dict[str, list[float]]]],
+    ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Remove unreasonable ball detections based on frame-to-frame motion.
 
@@ -123,7 +135,10 @@ class BallTracker:
 
         return ball_positions
 
-    def interpolate_ball_positions(self, ball_positions):
+    def interpolate_ball_positions(
+        self,
+        ball_positions: list[dict[int, dict[str, list[float]]]],
+    ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Fill in missing ball positions using linear interpolation.
 

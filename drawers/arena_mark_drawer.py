@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, Sequence
+
 import supervision as sv
+import numpy as np
 
 class ArenaMarkDrawer:
     """
@@ -7,10 +12,14 @@ class ArenaMarkDrawer:
     Attributes:
         keypoint_color (str): Hex color code used to draw the keypoints.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.keypoint_color = "#15fc00"
 
-    def draw(self, frames, arena_marks):
+    def draw(
+        self,
+        frames: Sequence[np.ndarray],
+        arena_marks: Sequence[Any],
+    ) -> list[np.ndarray]:
         """
         Draw court keypoints on each frame.
 

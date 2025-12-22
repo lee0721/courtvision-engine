@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Sequence
+
 import cv2
+import numpy as np
 
 class FrameNumberDrawer:
     """
@@ -8,10 +13,10 @@ class FrameNumberDrawer:
     Methods:
         draw(frames): Draws frame index numbers on each frame.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def draw(self, frames):
+    def draw(self, frames: Sequence[np.ndarray]) -> list[np.ndarray]:
         """
         Annotates each frame with its index number.
 

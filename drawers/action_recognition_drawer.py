@@ -1,18 +1,23 @@
+from __future__ import annotations
+
 import cv2
 import json
+from typing import Sequence
+
+import numpy as np
 
 class ActionRecognitionDrawer:
     """
     This class draws action recognition labels on the video frames,
     based on per-player predictions.
     """
-    def __init__(self, labels_file='action_recognition/labels_dict.json'):
+    def __init__(self, labels_file: str = "action_recognition/labels_dict.json") -> None:
         # Load the mapping from label index to action label name
         self.action_predictions = {}
         with open(labels_file, 'r') as f:
             self.action_labels = json.load(f)
 
-    def set_predictions(self, action_predictions):
+    def set_predictions(self, action_predictions: dict[int, Sequence[int]]) -> None:
         """
         Store predicted action labels for each player.
 
@@ -27,7 +32,12 @@ class ActionRecognitionDrawer:
             for player_id, label_list in action_predictions.items()
         }
 
-    def draw(self, video_frames, player_tracks, vid_stride=8):
+    def draw(
+        self,
+        video_frames: Sequence[np.ndarray],
+        player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+        vid_stride: int = 8,
+    ) -> list[np.ndarray]:
         """
         Draw action labels on video frames.
 

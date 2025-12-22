@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Sequence
+
 from .utils import draw_rounded_rectangle
 import cv2 
 import numpy as np
@@ -6,10 +10,14 @@ class TeamBallControlDrawer:
     """
     A drawer class responsible for calculating and visualizing team ball control statistics.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def get_team_ball_control(self, player_assignment, ball_aquisition):
+    def get_team_ball_control(
+        self,
+        player_assignment: Sequence[dict[int, int]],
+        ball_aquisition: Sequence[int],
+    ) -> np.ndarray:
         """
         Determine which team controls the ball in each frame.
 
@@ -30,7 +38,12 @@ class TeamBallControlDrawer:
 
         return np.array(control_array)
 
-    def draw(self, video_frames, player_assignment, ball_aquisition):
+    def draw(
+        self,
+        video_frames: Sequence[np.ndarray],
+        player_assignment: Sequence[dict[int, int]],
+        ball_aquisition: Sequence[int],
+    ) -> list[np.ndarray]:
         """
         Draw accumulated ball control statistics on video frames.
 
@@ -53,7 +66,12 @@ class TeamBallControlDrawer:
 
         return output_video_frames
     
-    def draw_frame(self, frame, frame_num, team_ball_control):
+    def draw_frame(
+        self,
+        frame: np.ndarray,
+        frame_num: int,
+        team_ball_control: np.ndarray,
+    ) -> np.ndarray:
         """
         Overlay the statistics box on a single frame.
 

@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import sys 
+from typing import Sequence
+
 sys.path.append('../')
 from utils.bbox_utils import measure_distance, get_center_of_bbox
 
@@ -11,7 +15,7 @@ class BallAquisitionDetector:
     spatial proximity and bounding box containment heuristics.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize thresholds and parameters for possession detection.
 
@@ -26,7 +30,11 @@ class BallAquisitionDetector:
         self.min_frames = 11
         self.containment_threshold = 0.8
         
-    def get_key_basketball_player_assignment_points(self, player_bbox,ball_center):
+    def get_key_basketball_player_assignment_points(
+        self,
+        player_bbox: Sequence[float],
+        ball_center: Sequence[float],
+    ) -> list[tuple[float, float]]:
         """
         Generate key anchor points around a player's bounding box for distance checks.
 
@@ -64,7 +72,11 @@ class BallAquisitionDetector:
         ]
         return output_points
     
-    def calculate_ball_containment_ratio(self, player_bbox, ball_bbox):
+    def calculate_ball_containment_ratio(
+        self,
+        player_bbox: Sequence[float],
+        ball_bbox: Sequence[float],
+    ) -> float:
         """
         Compute the overlap ratio between ball and player bbox.
 
@@ -92,7 +104,11 @@ class BallAquisitionDetector:
         
         return intersection_area / ball_area
     
-    def find_minimum_distance_to_ball(self, ball_center, player_bbox):
+    def find_minimum_distance_to_ball(
+        self,
+        ball_center: Sequence[float],
+        player_bbox: Sequence[float],
+    ) -> float:
         """
         Get the closest distance from ball to key points on player's bbox.
 
@@ -106,7 +122,12 @@ class BallAquisitionDetector:
         key_points = self.get_key_basketball_player_assignment_points(player_bbox,ball_center)
         return min(measure_distance(ball_center, point) for point in key_points)
     
-    def find_best_candidate_for_possession(self, ball_center, player_tracks_frame, ball_bbox):
+    def find_best_candidate_for_possession(
+        self,
+        ball_center: Sequence[float],
+        player_tracks_frame: dict[int, dict[str, Sequence[float]]],
+        ball_bbox: Sequence[float],
+    ) -> int:
         """
         Determine which player (if any) is most likely to possess the ball.
 
@@ -147,7 +168,11 @@ class BallAquisitionDetector:
                 
         return -1
     
-    def detect_ball_possession(self, player_tracks, ball_tracks):
+    def detect_ball_possession(
+        self,
+        player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+        ball_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+    ) -> list[int]:
         """
         Detect ball possession for each frame based on player and ball tracks.
 

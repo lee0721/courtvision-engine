@@ -1,18 +1,25 @@
+from __future__ import annotations
+
 from copy import deepcopy
+from typing import Sequence
 
 class BallEventDetector():
     """
     Detects ball-related events such as successful passes and interceptions in a basketball game,
     based on changes in ball possession and team assignments.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the BallEventDetector.
         Currently, no parameters are required during initialization.
         """
         pass 
 
-    def detect_passes(self,ball_acquisition,player_assignment):
+    def detect_passes(
+        self,
+        ball_acquisition: Sequence[int],
+        player_assignment: Sequence[dict[int, int]],
+    ) -> list[int]:
         """
         Detects successful passes between players on the same team.
 
@@ -53,7 +60,11 @@ class BallEventDetector():
 
         return passes
 
-    def detect_interceptions(self,ball_acquisition,player_assignment):
+    def detect_interceptions(
+        self,
+        ball_acquisition: Sequence[int],
+        player_assignment: Sequence[dict[int, int]],
+    ) -> list[int]:
         """
         Detects interceptions when the ball possession switches between players on opposing teams.
 

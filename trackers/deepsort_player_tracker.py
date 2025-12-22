@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from ultralytics import YOLO
 import supervision as sv
 import numpy as np
 from deep_sort_realtime.deepsort_tracker import DeepSort
 import sys 
+from typing import Any, Sequence
+
 sys.path.append('../')
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
@@ -15,7 +19,13 @@ class DeepSortPlayerTracker:
     player identities across frames, processing detections in batches.
     """
 
-    def __init__(self, model_path, max_age=30, n_init=3, nn_budget=100):
+    def __init__(
+        self,
+        model_path: str,
+        max_age: int = 30,
+        n_init: int = 3,
+        nn_budget: int = 100,
+    ) -> None:
         """
         Initialize the DeepSortPlayerTracker with YOLO model and DeepSORT tracker.
 
@@ -28,7 +38,7 @@ class DeepSortPlayerTracker:
         self.model = YOLO(model_path)
         self.tracker = DeepSort(max_age=max_age, n_init=n_init, nn_budget=nn_budget)
 
-    def detect_frames(self, frames):
+    def detect_frames(self, frames: Sequence["np.ndarray"]) -> list[Any]:
         """
         Detect players in batches of video frames using YOLO.
 
@@ -48,7 +58,12 @@ class DeepSortPlayerTracker:
             detections += detections_batch
         return detections
 
-    def get_object_tracks(self, frames, read_from_stub=False, stub_path=None):
+    def get_object_tracks(
+        self,
+        frames: Sequence["np.ndarray"],
+        read_from_stub: bool = False,
+        stub_path: str | None = None,
+    ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Run tracking on input video frames and return consistent player IDs per frame.
 

@@ -11,6 +11,7 @@ from configs import (
     ACTION_RECOGNITION_MODEL_PATH,
     ARENA_MARK_DETECTOR_PATH,
     BALL_DETECTOR_PATH,
+    COURT_IMAGE_PATH,
     PLAYER_DETECTOR_PATH,
     TEAM_1_CLASS_NAME,
     TEAM_2_CLASS_NAME,
@@ -129,7 +130,7 @@ class VideoAnalysis:
 
         # Tactical view
         perspective_transformer = PerspectiveTransformer(
-            court_image_path="./images/basketball_court.png",
+            court_image_path=COURT_IMAGE_PATH,
         )
 
         arena_marks_per_frame = perspective_transformer.validate_keypoints(

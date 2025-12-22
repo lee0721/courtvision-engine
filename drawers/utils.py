@@ -5,13 +5,21 @@ This module includes functions to draw triangles, ellipses, and rounded rectangl
 which are used to represent various annotations such as player IDs, ball pointers,
 or team statistics in sports video analysis.
 """
+from __future__ import annotations
+
 import cv2 
 import numpy as np
 import sys 
+from typing import Sequence
+
 sys.path.append('../')
 from utils import get_center_of_bbox, get_bbox_width, get_foot_position
 
-def draw_traingle(frame, bbox, color):
+def draw_traingle(
+    frame: np.ndarray,
+    bbox: Sequence[float],
+    color: tuple[int, int, int],
+) -> np.ndarray:
     """
     Draws a filled triangle (used for ball or ball possessor) on the given frame.
 
@@ -32,7 +40,12 @@ def draw_traingle(frame, bbox, color):
     cv2.drawContours(frame, [triangle_points], 0, (0, 0, 0), 2)
     return frame
 
-def draw_ellipse(frame, bbox, color, track_id=None):
+def draw_ellipse(
+    frame: np.ndarray,
+    bbox: Sequence[float],
+    color: tuple[int, int, int],
+    track_id: int | None = None,
+) -> np.ndarray:
     """
     Draws an ellipse under a player to represent presence and optionally show their ID.
 
@@ -96,7 +109,14 @@ def draw_ellipse(frame, bbox, color, track_id=None):
 
     return frame
 
-def draw_rounded_rectangle(img, top_left, bottom_right, radius, color, alpha=1.0):
+def draw_rounded_rectangle(
+    img: np.ndarray,
+    top_left: tuple[int, int],
+    bottom_right: tuple[int, int],
+    radius: int,
+    color: tuple[int, int, int],
+    alpha: float = 1.0,
+) -> np.ndarray:
     """
     Draws a filled rounded rectangle with transparency.
 

@@ -17,6 +17,9 @@ OUTPUT_VIDEO_PATH = f"{_settings.output_dir}/output_video.avi"
 ACTION_RECOGNITION_MODEL_PATH = _settings.action_recognition_model_path
 ACTION_DEVICE = _settings.action_device
 
+# Court overlay image path
+COURT_IMAGE_PATH = _settings.court_image_path
+
 # Team class names used for classification (these must match YOLO class labels or tracker labels)
 TEAM_1_CLASS_NAME = _settings.team_1_class_name
 TEAM_2_CLASS_NAME = _settings.team_2_class_name

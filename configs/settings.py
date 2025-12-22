@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ball_detector_path: str = "models/ball_detector_model.pt"
     arena_mark_detector_path: str = "models/arena_mark_detector.pt"
     action_recognition_model_path: str = "models/action_r2plus1d_best.pt"
+    court_image_path: str = "images/basketball_court.png"
 
     team_1_class_name: str = "dark blue shirt"
     team_2_class_name: str = "white shirt"

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Sequence
+
 from .utils import draw_rounded_rectangle
 import cv2
 import numpy as np
@@ -7,10 +11,14 @@ class BallEventDrawer:
     A drawer class responsible for displaying the total number of passes and interceptions
     for both teams on each frame.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def get_stats(self, passes, interceptions):
+    def get_stats(
+        self,
+        passes: Sequence[int],
+        interceptions: Sequence[int],
+    ) -> tuple[int, int, int, int]:
         """
         Computes the cumulative counts of passes and interceptions for both teams.
 
@@ -39,7 +47,12 @@ class BallEventDrawer:
                 
         return len(team1_passes), len(team2_passes), len(team1_interceptions), len(team2_interceptions)
 
-    def draw(self, video_frames, passes, interceptions):
+    def draw(
+        self,
+        video_frames: Sequence[np.ndarray],
+        passes: Sequence[int],
+        interceptions: Sequence[int],
+    ) -> list[np.ndarray]:
         """
         Draw running pass/interception stats on each frame (excluding the first one).
 
@@ -60,7 +73,13 @@ class BallEventDrawer:
             output_video_frames.append(frame_drawn)
         return output_video_frames
     
-    def draw_frame(self, frame, frame_num, passes, interceptions):
+    def draw_frame(
+        self,
+        frame: np.ndarray,
+        frame_num: int,
+        passes: Sequence[int],
+        interceptions: Sequence[int],
+    ) -> np.ndarray:
         """
         Annotate a single frame with cumulative statistics of passes and interceptions.
 

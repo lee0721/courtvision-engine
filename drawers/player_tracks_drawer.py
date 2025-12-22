@@ -1,4 +1,10 @@
-from .utils import draw_ellipse,draw_traingle
+from __future__ import annotations
+
+from typing import Sequence
+
+import numpy as np
+
+from .utils import draw_ellipse, draw_traingle
 
 class PlayerTracksDrawer:
     """
@@ -9,7 +15,11 @@ class PlayerTracksDrawer:
         team_1_color (list): RGB color for Team 1 players.
         team_2_color (list): RGB color for Team 2 players.
     """
-    def __init__(self,team_1_color=[255, 245, 238],team_2_color=[128, 0, 128]):
+    def __init__(
+        self,
+        team_1_color: Sequence[int] = (255, 245, 238),
+        team_2_color: Sequence[int] = (128, 0, 128),
+    ) -> None:
         """
         Initialize with colors for both teams.
 
@@ -21,7 +31,13 @@ class PlayerTracksDrawer:
         self.team_1_color = team_1_color
         self.team_2_color = team_2_color
 
-    def draw(self,video_frames,tracks,player_assignment,ball_aquisition):
+    def draw(
+        self,
+        video_frames: Sequence[np.ndarray],
+        tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+        player_assignment: Sequence[dict[int, int]],
+        ball_aquisition: Sequence[int],
+    ) -> list[np.ndarray]:
         """
         Draw player bounding ellipses and triangle pointers for ball possession on each frame.
 

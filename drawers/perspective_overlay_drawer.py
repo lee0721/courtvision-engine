@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 import cv2 
+from typing import Sequence
+
+import numpy as np
 
 class PerspectiveOverlayDrawer:
     """
@@ -12,21 +17,27 @@ class PerspectiveOverlayDrawer:
         team_1_color (list): BGR color for Team 1.
         team_2_color (list): BGR color for Team 2.
     """
-    def __init__(self, team_1_color=[255, 245, 238], team_2_color=[128, 0, 0]):
+    def __init__(
+        self,
+        team_1_color: Sequence[int] = (255, 245, 238),
+        team_2_color: Sequence[int] = (128, 0, 0),
+    ) -> None:
         self.start_x = 130
         self.start_y = 120
         self.team_1_color = team_1_color
         self.team_2_color = team_2_color
 
-    def draw(self, 
-             video_frames, 
-             court_image_path, 
-             width,
-             height,
-             tactical_court_keypoints,
-             tactical_player_positions=None,
-             player_assignment=None,
-             ball_acquisition=None):
+    def draw(
+        self, 
+        video_frames: Sequence[np.ndarray],
+        court_image_path: str,
+        width: int,
+        height: int,
+        tactical_court_keypoints: Sequence[Sequence[int]],
+        tactical_player_positions: Sequence[dict[int, Sequence[float]]] | None = None,
+        player_assignment: Sequence[dict[int, int]] | None = None,
+        ball_acquisition: Sequence[int] | None = None,
+    ) -> list[np.ndarray]:
         """
         Draws the tactical (top-down) overlay onto each video frame.
 

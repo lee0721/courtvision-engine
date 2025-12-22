@@ -1,6 +1,13 @@
+from __future__ import annotations
+
 from ultralytics import YOLO
 import supervision as sv
 import sys 
+from typing import Any, TYPE_CHECKING, Sequence
+
+if TYPE_CHECKING:
+    import numpy as np
+
 sys.path.append('../')
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
@@ -11,11 +18,16 @@ class ArenaMarkDetector:
     The ArenaMarkDetector class uses a YOLO model to detect arena (court) keypoints 
     from a batch of video frames. Stub caching is supported to avoid redundant inference.
     """
-    def __init__(self, model_path):
+    def __init__(self, model_path: str) -> None:
         # Load YOLOv8 keypoint detection model
         self.model = YOLO(model_path)
     
-    def extract_marks(self, frames,read_from_stub=False, stub_path=None):
+    def extract_marks(
+        self,
+        frames: Sequence["np.ndarray"],
+        read_from_stub: bool = False,
+        stub_path: str | None = None,
+    ) -> list[Any]:
         """
         Detect court keypoints for a sequence of frames using the YOLO model.
         If stub reading is enabled and results are available, cached keypoints are returned.

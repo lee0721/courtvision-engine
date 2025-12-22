@@ -1,6 +1,13 @@
+from __future__ import annotations
+
 from ultralytics import YOLO
 import supervision as sv
 import sys 
+from typing import Any, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
+
 sys.path.append('../')
 from utils import read_stub, save_stub
 from configs import DETECTION_BATCH_SIZE, DETECTION_CONFIDENCE
@@ -12,7 +19,7 @@ class PlayerTracker:
     This class combines YOLO object detection with ByteTrack tracking to maintain consistent
     player identities across frames while processing detections in batches.
     """
-    def __init__(self, model_path):
+    def __init__(self, model_path: str) -> None:
         """
         Initialize the PlayerTracker with YOLO model and ByteTrack tracker.
 
@@ -22,7 +29,7 @@ class PlayerTracker:
         self.model = YOLO(model_path) 
         self.tracker = sv.ByteTrack()
 
-    def detect_frames(self, frames):
+    def detect_frames(self, frames: Sequence["np.ndarray"]) -> list[Any]:
         """
         Detect players in a sequence of frames using batch processing.
 
@@ -42,7 +49,12 @@ class PlayerTracker:
             detections += detections_batch
         return detections
 
-    def get_object_tracks(self, frames, read_from_stub=False, stub_path=None):
+    def get_object_tracks(
+        self,
+        frames: Sequence["np.ndarray"],
+        read_from_stub: bool = False,
+        stub_path: str | None = None,
+    ) -> list[dict[int, dict[str, list[float]]]]:
         """
         Get player tracking results for a sequence of frames with optional caching.
 

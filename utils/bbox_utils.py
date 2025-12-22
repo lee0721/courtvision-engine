@@ -5,7 +5,12 @@ This module contains helper functions for working with bounding boxes, including
 calculations for centers, widths, and distances between points.
 """
 
-def get_center_of_bbox(bbox):
+from __future__ import annotations
+
+from typing import Sequence
+
+
+def get_center_of_bbox(bbox: Sequence[float]) -> tuple[int, int]:
     """
     Calculate the center coordinates of a bounding box.
 
@@ -22,7 +27,7 @@ def get_center_of_bbox(bbox):
     y1, y2 = sorted([y1, y2])
     return int((x1 + x2) / 2), int((y1 + y2) / 2)
 
-def get_bbox_width(bbox):
+def get_bbox_width(bbox: Sequence[float]) -> int:
     """
     Calculate the absolute width of a bounding box.
 
@@ -34,7 +39,7 @@ def get_bbox_width(bbox):
     """
     return abs(bbox[2] - bbox[0])
 
-def measure_distance(p1,p2):
+def measure_distance(p1: Sequence[float], p2: Sequence[float]) -> float:
     """
     Calculate the Euclidean distance between two points.
 
@@ -47,7 +52,7 @@ def measure_distance(p1,p2):
     """
     return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
 
-def measure_xy_distance(p1,p2):
+def measure_xy_distance(p1: Sequence[float], p2: Sequence[float]) -> tuple[float, float]:
     """
     Calculate the separate x and y distances between two points.
 
@@ -60,7 +65,7 @@ def measure_xy_distance(p1,p2):
     """
     return p1[0]-p2[0],p1[1]-p2[1]
 
-def get_foot_position(bbox):
+def get_foot_position(bbox: Sequence[float]) -> tuple[int, int]:
     """
     Calculate the position of the bottom center point of a bounding box.
 
@@ -70,5 +75,5 @@ def get_foot_position(bbox):
     Returns:
         tuple: Coordinates (x, y) of the bottom center point.
     """
-    x1,y1,x2,y2 = bbox
-    return int((x1+x2)/2),int(y2)
+    x1, y1, x2, y2 = bbox
+    return int((x1 + x2) / 2), int(y2)

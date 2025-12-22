@@ -5,10 +5,16 @@ This module provides utility functions to load video frames into memory and save
 processed frames back to video files, with support for common video formats.
 """
 
+from __future__ import annotations
+
 import cv2
 import os
+from typing import TYPE_CHECKING, Sequence
 
-def read_video(video_path):
+if TYPE_CHECKING:
+    import numpy as np
+
+def read_video(video_path: str) -> list["np.ndarray"]:
     """
     Read all frames from a video file into memory.
 
@@ -27,7 +33,7 @@ def read_video(video_path):
         frames.append(frame)
     return frames
 
-def save_video(ouput_video_frames,output_video_path):
+def save_video(ouput_video_frames: Sequence["np.ndarray"], output_video_path: str) -> None:
     """
     Save a sequence of frames as a video file.
 

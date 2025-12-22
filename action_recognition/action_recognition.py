@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Sequence
 
 import cv2
 import numpy as np
@@ -49,7 +50,13 @@ class ActionRecognitionModel:
         # Temporal stride between clips
         self.stride = 8
 
-    def predict(self, video_frames, player_tracks, read_from_stub=False, stub_path=None):
+    def predict(
+        self,
+        video_frames: Sequence[np.ndarray],
+        player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+        read_from_stub: bool = False,
+        stub_path: str | None = None,
+    ) -> dict[int, list[int]]:
         # Try loading results from cache if available
         predictions = read_stub(read_from_stub, stub_path)
         if predictions is not None:
@@ -97,7 +104,7 @@ class ActionRecognitionModel:
         save_stub(stub_path, results)
         return results
 
-    def _preprocess_clips(self, clips):
+    def _preprocess_clips(self, clips: Sequence[Sequence[np.ndarray]]) -> torch.Tensor:
         # Apply transform pipeline to convert clips into input tensor
         tensor_batch = []
         for clip in clips:

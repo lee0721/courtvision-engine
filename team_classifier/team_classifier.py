@@ -1,8 +1,15 @@
+from __future__ import annotations
+
 from PIL import Image
 import cv2
 from transformers import CLIPProcessor, CLIPModel
 
 import sys 
+from typing import TYPE_CHECKING, Sequence
+
+if TYPE_CHECKING:
+    import numpy as np
+
 sys.path.append('../')
 from utils import read_stub, save_stub
 
@@ -19,7 +26,7 @@ class TeamClassifier:
         team_1_class_name (str): Description of Team 1's jersey appearance.
         team_2_class_name (str): Description of Team 2's jersey appearance.
     """
-    def __init__(self, team_1_class_name, team_2_class_name):
+    def __init__(self, team_1_class_name: str, team_2_class_name: str) -> None:
         """
         Initialize the TeamClassifier with specified team jersey descriptions.
 
@@ -52,7 +59,11 @@ class TeamClassifier:
         # Used to cache per-player classification
         self.player_team_dict = {}
 
-    def get_player_color(self, frame, bbox):
+    def get_player_color(
+        self,
+        frame: "np.ndarray",
+        bbox: Sequence[float],
+    ) -> str:
         """
         Analyzes the jersey color of a player within the given bounding box using CLIP.
 
@@ -88,7 +99,12 @@ class TeamClassifier:
         predicted_class = classes[probs.argmax(dim=1)[0]]
         return predicted_class
 
-    def get_player_team(self, frame, player_bbox, player_id):
+    def get_player_team(
+        self,
+        frame: "np.ndarray",
+        player_bbox: Sequence[float],
+        player_id: int,
+    ) -> int:
         """
         Gets the team assignment for a player, using cached result if available.
 
@@ -109,7 +125,13 @@ class TeamClassifier:
         self.player_team_dict[player_id] = team_id
         return team_id
 
-    def get_player_teams_across_frames(self, video_frames, player_tracks, read_from_stub=False, stub_path=None):
+    def get_player_teams_across_frames(
+        self,
+        video_frames: Sequence["np.ndarray"],
+        player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+        read_from_stub: bool = False,
+        stub_path: str | None = None,
+    ) -> list[dict[int, int]]:
         """
         Assigns teams to all players across all frames, with optional caching via stub.
 

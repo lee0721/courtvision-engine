@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import os
 import sys
 import pathlib
 import numpy as np
 import cv2
 from copy import deepcopy
+from typing import Any, Sequence
 from .homography import Homography
 
 folder_path = pathlib.Path(__file__).parent.resolve()
@@ -15,7 +18,7 @@ class PerspectiveTransformer:
     A class to transform player positions from camera perspective to a top-down tactical view.
     """
 
-    def __init__(self, court_image_path):
+    def __init__(self, court_image_path: str) -> None:
         self.court_image_path = court_image_path
         self.width = 300    # Width of tactical view image in pixels
         self.height = 161   # Height of tactical view image in pixels
@@ -55,7 +58,7 @@ class PerspectiveTransformer:
             (int(((self.actual_width_in_meters - 5.79) / self.actual_width_in_meters) * self.width), int((10 / self.actual_height_in_meters) * self.height)),
         ]
 
-    def validate_keypoints(self, keypoints_list):
+    def validate_keypoints(self, keypoints_list: Sequence[Any]) -> list[Any]:
         """
         Validates court keypoints based on relative distances between them.
 
@@ -101,7 +104,11 @@ class PerspectiveTransformer:
 
         return keypoints_list
 
-    def transform_players_to_tactical_view(self, keypoints_list, player_tracks):
+    def transform_players_to_tactical_view(
+        self,
+        keypoints_list: Sequence[Any],
+        player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
+    ) -> list[dict[int, list[float]]]:
         """
         Transforms player bounding box foot positions from video coordinates to tactical view coordinates.
 
