@@ -6,6 +6,8 @@ from typing import Sequence
 
 import numpy as np
 
+from configs import ACTION_STRIDE
+
 class ActionRecognitionDrawer:
     """
     This class draws action recognition labels on the video frames,
@@ -36,7 +38,7 @@ class ActionRecognitionDrawer:
         self,
         video_frames: Sequence[np.ndarray],
         player_tracks: Sequence[dict[int, dict[str, Sequence[float]]]],
-        vid_stride: int = 8,
+        vid_stride: int = ACTION_STRIDE,
     ) -> list[np.ndarray]:
         """
         Draw action labels on video frames.

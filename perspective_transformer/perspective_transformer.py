@@ -11,6 +11,12 @@ from .homography import Homography
 
 folder_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(folder_path, "../"))
+from configs import (
+    COURT_HEIGHT_M,
+    COURT_WIDTH_M,
+    TACTICAL_VIEW_HEIGHT_PX,
+    TACTICAL_VIEW_WIDTH_PX,
+)
 from utils import get_foot_position, measure_distance
 
 class PerspectiveTransformer:
@@ -20,12 +26,12 @@ class PerspectiveTransformer:
 
     def __init__(self, court_image_path: str) -> None:
         self.court_image_path = court_image_path
-        self.width = 300    # Width of tactical view image in pixels
-        self.height = 161   # Height of tactical view image in pixels
+        self.width = TACTICAL_VIEW_WIDTH_PX    # Width of tactical view image in pixels
+        self.height = TACTICAL_VIEW_HEIGHT_PX   # Height of tactical view image in pixels
 
         # Actual court dimensions in meters
-        self.actual_width_in_meters = 28
-        self.actual_height_in_meters = 15
+        self.actual_width_in_meters = COURT_WIDTH_M
+        self.actual_height_in_meters = COURT_HEIGHT_M
 
         # Fixed keypoints on tactical view based on real-world proportions
         self.key_points = [

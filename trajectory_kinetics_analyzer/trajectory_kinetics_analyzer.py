@@ -7,6 +7,7 @@ import sys
 folder_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(folder_path, "../"))
 
+from configs import ANALYSIS_FPS, SPEED_WINDOW_SIZE
 from utils import measure_distance
 from video_analysis.types import PerFrameFloat, Position, PositionsByFrame
 
@@ -87,7 +88,7 @@ class TrajectoryKineticsAnalyzer:
 
         return output_distances
 
-    def calculate_speed(self, distances: PerFrameFloat, fps: int = 30) -> PerFrameFloat:
+    def calculate_speed(self, distances: PerFrameFloat, fps: int = ANALYSIS_FPS) -> PerFrameFloat:
         """
         Calculate speed (km/h) for each player over time using a sliding window.
 
@@ -99,7 +100,7 @@ class TrajectoryKineticsAnalyzer:
             list: List of dicts containing player speed in km/h per frame.
         """
         speeds: PerFrameFloat = []
-        window_size = 5  # speed averaged over past 5 frames
+        window_size = SPEED_WINDOW_SIZE  # speed averaged over past 5 frames
 
         for frame_idx in range(len(distances)):
             speeds.append({})

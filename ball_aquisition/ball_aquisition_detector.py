@@ -4,6 +4,11 @@ import sys
 from typing import Sequence
 
 sys.path.append('../')
+from configs import (
+    BALL_POSSESSION_CONTAINMENT_THRESHOLD,
+    BALL_POSSESSION_MIN_FRAMES,
+    BALL_POSSESSION_THRESHOLD_PX,
+)
 from utils.bbox_utils import measure_distance, get_center_of_bbox
 
 class BallAquisitionDetector:
@@ -26,9 +31,9 @@ class BallAquisitionDetector:
             containment_threshold (float): Threshold for how much of the ball must be inside 
                 a player’s bbox to be considered possessed.
         """
-        self.possession_threshold = 50
-        self.min_frames = 11
-        self.containment_threshold = 0.8
+        self.possession_threshold = BALL_POSSESSION_THRESHOLD_PX
+        self.min_frames = BALL_POSSESSION_MIN_FRAMES
+        self.containment_threshold = BALL_POSSESSION_CONTAINMENT_THRESHOLD
         
     def get_key_basketball_player_assignment_points(
         self,

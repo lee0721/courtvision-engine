@@ -29,6 +29,23 @@ class Settings(BaseSettings):
     detection_batch_size: int = 20
     detection_confidence: float = 0.5
 
+    output_video_fps: int = 24
+
+    action_clip_len: int = 16
+    action_stride: int = 8
+
+    ball_possession_threshold_px: int = 50
+    ball_possession_min_frames: int = 11
+    ball_possession_containment_threshold: float = 0.8
+
+    tactical_view_width_px: int = 300
+    tactical_view_height_px: int = 161
+    court_width_m: float = 28.0
+    court_height_m: float = 15.0
+
+    speed_window_size: int = 5
+    analysis_fps: int = 30
+
     action_device: str | None = None
     log_level: str = "INFO"
 

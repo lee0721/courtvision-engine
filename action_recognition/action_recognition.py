@@ -11,6 +11,7 @@ from PIL import Image
 from torchvision.models.video import R2Plus1D_18_Weights, r2plus1d_18
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
+from configs import ACTION_CLIP_LEN, ACTION_STRIDE
 from utils.stubs_utils import read_stub, save_stub
 # Load label dictionary for action classes
 LABELS_DICT_PATH = os.path.join(os.path.dirname(__file__), "labels_dict.json")
@@ -46,9 +47,9 @@ class ActionRecognitionModel:
         ])
         
         # Number of frames per clip
-        self.clip_len = 16 
+        self.clip_len = ACTION_CLIP_LEN 
         # Temporal stride between clips
-        self.stride = 8
+        self.stride = ACTION_STRIDE
 
     def predict(
         self,
