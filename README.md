@@ -48,6 +48,12 @@ Video Frames
     Drawers overlay all artefacts → rendered analysis video
 ```
 
+## Service Flow (API) 🔌
+```
+Client → POST /analysis → JobStore (SQLite) → BackgroundExecutor → VideoAnalysis
+   → output_videos/*.mp4 + output_videos/*.json → GET /results/{job_id}
+```
+
 ## Repository Layout 🗂️
 - `main.py` – CLI entry point for running a full analysis on a source video.
 - `video_analysis/` – orchestrates the end-to-end pipeline.
@@ -72,8 +78,9 @@ Video Frames
   - `arena_mark_detector.pt` – YOLO keypoint detector for court markings.
   - `action_r2plus1d_best.pt` – fine-tuned R(2+1)D action recognition checkpoint.
 
-> Swap in your own weights if you have different training artefacts—just update
-> the paths inside `configs/configs.py`.
+> Swap in your own weights if you have different training artefacts—paths are
+> loaded from `configs/settings.py` and can be overridden via `COURTVISION_*`
+> environment variables.
 
 ### Installation
 ```bash
@@ -97,8 +104,78 @@ Flags:
 
 Outputs:
 - `output_videos/…` – annotated game film with all overlays.
+- `output_videos/… .json` – structured analysis result for downstream use.
 - `stubs/…` – cached pickle files (player tracks, ball tracks, team assignments,
   action predictions, etc.) to accelerate future runs.
+
+### Structured Output (analysis_result.json)
+Each run writes a JSON file next to the output video:
+- `input_video`
+- `output_video`
+- `frame_count`
+- `events` (`passes`, `interceptions`)
+- `ball_possession`
+- `team_ball_control_ratio`
+- `player_metrics` (distance and speed per player)
+
+### API Service (FastAPI)
+Start the service:
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+Endpoints:
+- `POST /analysis` – submit a job
+- `GET /status/{job_id}` – job status
+- `GET /results/{job_id}` – job status + JSON result (when ready)
+- `GET /jobs` – list recent jobs
+- `POST /jobs/{job_id}/retry` – retry a failed job
+
+Example request:
+```bash
+curl -X POST http://127.0.0.1:8000/analysis \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "input_video_path": "input_videos/sample.mp4",
+    "output_video": "output_videos/sample_api.mp4",
+    "stub_path": "stubs/sample_api_run",
+    "use_stubs": true
+  }'
+```
+
+Example results:
+```bash
+curl http://127.0.0.1:8000/status/<job_id>
+curl http://127.0.0.1:8000/results/<job_id>
+```
+
+Swagger UI: `http://127.0.0.1:8000/docs`
+
+### Stub Cache Layout
+Stub files are stored under the `stub_path` directory:
+- `player_track_stubs.pkl`
+- `ball_track_stubs.pkl`
+- `court_key_points_stub.pkl`
+- `player_assignment_stub.pkl`
+- `action_recognition_predictions.pkl`
+
+### Testing
+```bash
+python -m pytest
+```
+
+### Configuration (Environment Variables)
+All settings are read from `configs/settings.py` with the `COURTVISION_` prefix.
+Common overrides:
+- `COURTVISION_OUTPUT_DIR`, `COURTVISION_STUBS_DIR`, `COURTVISION_DATA_DIR`
+- `COURTVISION_JOBS_DB_PATH`
+- `COURTVISION_PLAYER_DETECTOR_PATH`, `COURTVISION_BALL_DETECTOR_PATH`
+- `COURTVISION_ARENA_MARK_DETECTOR_PATH`, `COURTVISION_ACTION_RECOGNITION_MODEL_PATH`
+- `COURTVISION_DETECTION_BATCH_SIZE`, `COURTVISION_DETECTION_CONFIDENCE`
+- `COURTVISION_ACTION_CLIP_LEN`, `COURTVISION_ACTION_STRIDE`
+- `COURTVISION_BALL_POSSESSION_MIN_FRAMES`, `COURTVISION_BALL_POSSESSION_THRESHOLD_PX`
+- `COURTVISION_SPEED_WINDOW_SIZE`, `COURTVISION_ANALYSIS_FPS`
+- `COURTVISION_LOG_LEVEL`, `COURTVISION_LOG_FILE`, `COURTVISION_ACTION_DEVICE`
 
 ## Extending the Project
 - **Training** – use the notebooks under `training_notebook/` or create new ones
