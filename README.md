@@ -183,6 +183,8 @@ Stub files are stored under the `stub_path` directory:
 - `action_recognition_predictions.pkl`
 
 ### Testing
+Tests: pytest - 5 passed (unit + integration).
+Test log: `logs/pytest_20251223_182551.log`.
 ```bash
 python -m pytest
 ```
