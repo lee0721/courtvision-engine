@@ -57,7 +57,7 @@ Client → POST /analysis → JobStore (SQLite) → BackgroundExecutor → Video
 ## Performance (Benchmarks) ⚡
 - End-to-end pipeline: cold 536299.55 ms → warm 10995.06 ms (48.78x faster, 97.9% time saved).
 - Throughput: cold 0.34 FPS, warm 16.37 FPS (frame_count=180).
-- API latency: `POST /analysis` enqueue/response `time_total` avg 0.0419 s (5 requests, 202 Accepted; not full pipeline time).
+- API latency (N=30, CPU partition): `POST /analysis` avg 0.0345 s (p50 0.0214, p95 0.0389, p99 0.2829); `GET /status` avg 0.0089 s (p50 0.0086, p95 0.0117, p99 0.0132). Enqueue only, not full pipeline time.
 
 ## Repository Layout 🗂️
 - `main.py` – CLI entry point for running a full analysis on a source video.
