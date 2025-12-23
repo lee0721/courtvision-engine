@@ -56,9 +56,22 @@ Client → POST /analysis → JobStore (SQLite) → BackgroundExecutor → Video
 
 ## Performance (Benchmarks) ⚡
 - End-to-end pipeline: cold 536299.55 ms → warm 10995.06 ms (48.78x faster, 97.9% time saved).
-- Throughput: cold 0.34 FPS, warm 16.37 FPS (frame_count=180).
+- Throughput (cold/warm pipeline): cold 0.34 FPS, warm 16.37 FPS (frame_count=180).
+- CPU vs GPU (stub cache cold/warm, frame_count=180):
+
+| Platform | Hardware | Partition | Cold duration (ms) | Cold FPS | Warm duration (ms) | Warm FPS | Warm speedup |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| CPU (stubs) | CPU | cpu | 536299.55 | 0.34 | 10995.06 | 16.37 | 48.78x |
+| GPU (stubs) | NVIDIA A100 | gpu | 27526.74 | 6.54 | 9293.62 | 19.37 | 2.96x |
+- GPU vs CPU speedup (stubs): cold ~19.5x, warm ~1.18x.
+- GPU A100 (stubs, warm): stub hit ratio 100.00% (stub_hit=5, stub_miss=0).
+- Throughput (steady-state, CPU, stubs): single-job (N=50) avg 22.64 FPS (p95 23.37), 0.755 video-min/min (p95 0.779, input_fps=30).
+- Parallel throughput (N=5, CPU, stubs): per-job avg 5.26 FPS (p95 7.24); system 22.93 FPS (0.764 video-min/min, 900 frames / 39.26 s, input_fps=30).
 - API latency (N=50, CPU partition): `POST /analysis` avg 0.0346 s (p50 0.0209, p95 0.0410, p99 0.3434); `GET /status` avg 0.0089 s (p50 0.0083, p95 0.0103, p99 0.0200). Enqueue only, not full pipeline time.
 - Queue wait (queued→running) avg 0.0317 s (p95 0.0375); processing time (running→completed) avg 7.9532 s (p95 8.2365) from `jobs.db` (N=50, CPU partition, output `output_videos/bench_api.mp4`, single in-flight so queue wait is minimal).
+- Reliability (N=30, CPU partition, stubs, uninterrupted): success rate 100% (30/30), retry rate 0.00%, failure categories none.
+- Cache efficiency (stubs, warm run with prebuilt stubs): hit ratio 100.00% (stub_hit=150, stub_miss=0, total=150) from `logs/bench_rel_20251223_133625.log`.
+- Resource efficiency (single job, CPU partition, stubs): peak CPU 201% (multi-core aggregate), peak RAM 4278.0 MB, GPU n/a.
 
 ## Repository Layout 🗂️
 - `main.py` – CLI entry point for running a full analysis on a source video.
