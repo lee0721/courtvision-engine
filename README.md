@@ -54,6 +54,11 @@ Client → POST /analysis → JobStore (SQLite) → BackgroundExecutor → Video
    → output_videos/*.mp4 + output_videos/*.json → GET /results/{job_id}
 ```
 
+## Performance (Benchmarks) ⚡
+- End-to-end pipeline: cold 536299.55 ms → warm 10995.06 ms (48.78x faster, 97.9% time saved).
+- Throughput: cold 0.34 FPS, warm 16.37 FPS (frame_count=180).
+- API latency: `POST /analysis` enqueue/response `time_total` avg 0.0419 s (5 requests, 202 Accepted; not full pipeline time).
+
 ## Repository Layout 🗂️
 - `main.py` – CLI entry point for running a full analysis on a source video.
 - `video_analysis/` – orchestrates the end-to-end pipeline.
