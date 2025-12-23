@@ -6,3 +6,4 @@ venv/
 *.pkl
 *.db
 .DS_Store
+stubs/

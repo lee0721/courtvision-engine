@@ -13,3 +13,4 @@ torchvision==0.17.0
 seaborn==0.11.2  
 fastapi==0.115.6
 uvicorn==0.30.6
+pydantic-settings==2.7.0

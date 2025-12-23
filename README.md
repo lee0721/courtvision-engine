@@ -189,6 +189,41 @@ Test log: `logs/pytest_20251223_182551.log`.
 python -m pytest
 ```
 
+### Docker / CI ⚠️
+- [x] Dockerfile (API + CLI, CPU)
+- [x] GitHub Actions: pytest on push/PR
+
+### Docker (API + CLI)
+Build image:
+```bash
+docker build -t courtvision-engine .
+```
+
+Run API (mount model weights + outputs):
+```bash
+docker run --rm -p 8000:8000 \
+  -v "$(pwd)/models:/app/models" \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/output_videos:/app/output_videos" \
+  -v "$(pwd)/stubs:/app/stubs" \
+  courtvision-engine
+```
+
+Run CLI (mount input video + outputs):
+```bash
+docker run --rm \
+  -v "$(pwd)/input_videos:/app/input_videos" \
+  -v "$(pwd)/models:/app/models" \
+  -v "$(pwd)/output_videos:/app/output_videos" \
+  -v "$(pwd)/stubs:/app/stubs" \
+  courtvision-engine python main.py input_videos/sample.mp4 \
+    --output_video output_videos/sample_docker.mp4 \
+    --stub_path stubs/sample_docker
+```
+
+### CI (GitHub Actions)
+- Workflow: `.github/workflows/pytest.yml` (runs pytest on push/PR).
+
 ### Configuration (Environment Variables)
 All settings are read from `configs/settings.py` with the `COURTVISION_` prefix.
 Common overrides:

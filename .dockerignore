@@ -1,0 +1,17 @@
+__pycache__/
+.venv/
+venv/
+.git/
+.github/
+*.pt
+*.pkl
+*.db
+*.avi
+*.mp4
+*.json
+.DS_Store
+data/
+logs/
+output_videos/
+stubs/
+input_videos/
