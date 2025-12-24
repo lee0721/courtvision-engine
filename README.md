@@ -1,5 +1,5 @@
 # CourtVision Engine 🏀
-[![pytest](https://github.com/lee0721/courtvision-engine/actions/workflows/pytest.yml/badge.svg)](https://github.com/lee0721/courtvision-engine/actions/workflows/pytest.yml)
+CI Status: [![pytest](https://github.com/lee0721/courtvision-engine/actions/workflows/pytest.yml/badge.svg)](https://github.com/lee0721/courtvision-engine/actions/workflows/pytest.yml)
 
 CourtVision Engine is a computer-vision toolkit for breaking down half-court basketball footage. The
 pipeline combines multi-object tracking, jersey-based team classification,
