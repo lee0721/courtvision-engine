@@ -34,7 +34,7 @@ class JobRecord(BaseModel):
 
 class JobStore:
     def __init__(self, db_path: Path) -> None:
-        self._db_path = Path(db_path)
+        self._db_path = self._normalize_db_path(db_path)
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = Lock()
         self._init_db()
@@ -135,7 +135,17 @@ class JobStore:
         return updated_job
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._db_path)
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        if self._db_path.exists() and self._db_path.is_dir():
+            raise sqlite3.OperationalError(
+                f"jobs_db_path points to a directory, not a file: {self._db_path}"
+            )
+        try:
+            conn = sqlite3.connect(self._db_path)
+        except sqlite3.OperationalError as exc:
+            raise sqlite3.OperationalError(
+                f"Failed to open jobs database at {self._db_path}: {exc}"
+            ) from exc
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -285,3 +295,13 @@ class JobStore:
         if hasattr(job, "model_dump"):
             return job.model_dump()
         return job.dict()
+
+    def _normalize_db_path(self, db_path: Path) -> Path:
+        """
+        Ensure callers can pass either a file path or a directory path for the DB.
+        If a directory is provided, drop the database inside it with a default name.
+        """
+        path = Path(db_path)
+        if path.exists() and path.is_dir():
+            path = path / "jobs.db"
+        return path.resolve()

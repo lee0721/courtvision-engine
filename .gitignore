@@ -7,3 +7,8 @@ venv/
 *.db
 .DS_Store
 stubs/
+output_videos/
+logs/
+job_output.log
+job_error.log
+.env

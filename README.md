@@ -190,10 +190,6 @@ Test log: `logs/pytest_20251223_182551.log`.
 python -m pytest
 ```
 
-### Docker / CI ⚠️
-- [x] Dockerfile (API + CLI, CPU)
-- [x] GitHub Actions: pytest on push/PR
-
 ### Docker (API + CLI)
 Build image:
 ```bash
