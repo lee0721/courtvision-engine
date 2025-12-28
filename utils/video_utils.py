@@ -10,6 +10,8 @@ from __future__ import annotations
 import logging
 import cv2
 import os
+import shutil
+import subprocess
 from typing import TYPE_CHECKING, Sequence
 
 from configs import OUTPUT_VIDEO_FPS
@@ -112,3 +114,45 @@ def save_video(ouput_video_frames: Sequence["np.ndarray"], output_video_path: st
         raise
     finally:
         out.release()
+
+
+def transcode_to_h264(input_path: str, output_path: str) -> None:
+    """
+    Transcode a video file to H.264 (mp4) using ffmpeg for web compatibility.
+
+    Args:
+        input_path (str): Path to the input video file.
+        output_path (str): Path where the transcoded video should be saved.
+    """
+    if not shutil.which("ffmpeg"):
+        logger.error("ffmpeg_not_found")
+        raise RuntimeError("ffmpeg is not installed or not in PATH")
+
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    cmd = [
+        "ffmpeg",
+        "-y",  # Overwrite output file
+        "-v", "error",  # Less verbose
+        "-i", input_path,
+        "-c:v", "libx264",
+        "-preset", "veryfast",  # Fast encoding
+        "-pix_fmt", "yuv420p",  # Compatibility
+        "-movflags", "+faststart",  # Web optimized
+        output_path
+    ]
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as exc:
+        log_kv(
+            logger,
+            logging.ERROR,
+            "transcode_failed",
+            input_path=input_path,
+            output_path=output_path,
+            error=str(exc.stderr),
+        )
+        raise RuntimeError(f"ffmpeg transcoding failed: {exc.stderr}") from exc
+

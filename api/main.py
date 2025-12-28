@@ -168,6 +168,7 @@ def get_status(job_id: str) -> StatusResponse:
         completed_at=job.completed_at,
         updated_at=job.updated_at,
         progress=job.progress,
+        stage=job.stage,
         runtime_ms=job.runtime_ms,
         worker_host=job.worker_host,
         error_message=job.error_message,
@@ -194,6 +195,7 @@ def get_results(job_id: str):
             completed_at=job.completed_at,
             updated_at=job.updated_at,
             progress=job.progress,
+            stage=job.stage,
             runtime_ms=job.runtime_ms,
             worker_host=job.worker_host,
             error_message=job.error_message,
@@ -225,6 +227,7 @@ def get_results(job_id: str):
         completed_at=job.completed_at,
         updated_at=job.updated_at,
         progress=job.progress,
+        stage=job.stage,
         runtime_ms=job.runtime_ms,
         worker_host=job.worker_host,
         error_message=job.error_message,
@@ -255,6 +258,7 @@ def list_jobs(
             input_video_path=job.input_video_path,
             input_video_url=job.input_video_url,
             output_video_path=job.output_video_path,
+            stage=job.stage,
         )
         for job in jobs
     ]
@@ -329,6 +333,7 @@ def retry_job(job_id: str) -> StatusResponse:
         completed_at=updated_job.completed_at,
         updated_at=updated_job.updated_at,
         progress=updated_job.progress,
+        stage=updated_job.stage,
         runtime_ms=updated_job.runtime_ms,
         worker_host=updated_job.worker_host,
         error_message=updated_job.error_message,
