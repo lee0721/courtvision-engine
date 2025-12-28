@@ -12,9 +12,8 @@ movement metrics.
 
 **Demo (2m)**  
 <video controls width="640">
-  <source src="https://raw.githubusercontent.com/lee0721/courtvision-engine/main/demo.mp4" type="video/mp4">
-  Your browser does not support the video tag.  
-  ▶️ [Open demo.mp4](https://raw.githubusercontent.com/lee0721/courtvision-engine/main/demo.mp4)
+  <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo.mp4" type="video/mp4">
+  ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo.mp4">Open demo.mp4</a>
 </video>
 
 ## Features ✨
