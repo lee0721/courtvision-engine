@@ -27,6 +27,7 @@ class JobRecord(BaseModel):
     completed_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     progress: Optional[float] = None
+    stage: Optional[str] = None
     runtime_ms: Optional[float] = None
     worker_host: Optional[str] = None
     error_message: Optional[str] = None
@@ -59,6 +60,7 @@ class JobStore:
                     completed_at,
                     updated_at,
                     progress,
+                    stage,
                     runtime_ms,
                     worker_host,
                     error_message
@@ -78,6 +80,7 @@ class JobStore:
                     :completed_at,
                     :updated_at,
                     :progress,
+                    :stage,
                     :runtime_ms,
                     :worker_host,
                     :error_message
@@ -125,6 +128,7 @@ class JobStore:
                     completed_at = :completed_at,
                     updated_at = :updated_at,
                     progress = :progress,
+                    stage = :stage,
                     runtime_ms = :runtime_ms,
                     worker_host = :worker_host,
                     error_message = :error_message
@@ -168,6 +172,7 @@ class JobStore:
                     completed_at TEXT,
                     updated_at TEXT,
                     progress REAL,
+                    stage TEXT,
                     runtime_ms REAL,
                     worker_host TEXT,
                     error_message TEXT
@@ -218,6 +223,7 @@ class JobStore:
             "runtime_ms": "REAL",
             "worker_host": "TEXT",
             "completed_at": "TEXT",
+            "stage": "TEXT",
         }
         for column_name, column_type in columns.items():
             if column_name not in existing:
@@ -257,6 +263,7 @@ class JobStore:
             completed_at=self._deserialize_datetime(row["completed_at"]),
             updated_at=self._deserialize_datetime(row["updated_at"]),
             progress=row["progress"],
+            stage=row["stage"],
             runtime_ms=row["runtime_ms"],
             worker_host=row["worker_host"],
             error_message=row["error_message"],

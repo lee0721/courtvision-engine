@@ -10,11 +10,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
+from api.schemas import JobStatus
 from video_analysis.video_analysis import VideoAnalysis
 from utils.logging_utils import log_kv
 
 from .jobs import JobStore
-from .schemas import AnalysisRequest, JobStatus
+from .schemas import AnalysisRequest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INPUT_VIDEOS_DIR = REPO_ROOT / "input_videos"
@@ -120,11 +121,25 @@ class BackgroundExecutor:
     ) -> None:
         start_time = time.perf_counter()
         worker_host = socket.gethostname()
+        def _update_progress(stage: str, ratio: float) -> None:
+            pct = round(max(0.0, min(1.0, ratio)) * 100, 2)
+            try:
+                self.job_store.update_job(
+                    job_id,
+                    status=JobStatus.RUNNING,
+                    progress=pct,
+                    stage=stage,
+                )
+            except Exception as exc:  # pragma: no cover - best effort
+                logger.debug("job_id=%s progress_update_failed stage=%s err=%s", job_id, stage, exc)
+
         self.job_store.update_job(
             job_id,
             status=JobStatus.RUNNING,
             started_at=datetime.utcnow(),
             worker_host=worker_host,
+            stage="read_video",
+            progress=1.0,
         )
         logger.info("job_id=%s status=running output_video=%s", job_id, output_video_path)
         try:
@@ -144,11 +159,27 @@ class BackgroundExecutor:
                 stub_path=str(stub_path),
                 use_stubs=request.use_stubs,
                 job_id=job_id,
+                progress_cb=_update_progress,
             )
             results = analyzer.run()
             results = results or {}
             results.setdefault("job_id", job_id)
             results.setdefault("generated_at", datetime.utcnow().isoformat() + "Z")
+            # Transcode to web-friendly format
+            temp_output = output_video_path.with_suffix(".temp.mp4")
+            if output_video_path.exists():
+                output_video_path.rename(temp_output)
+                from utils.video_utils import transcode_to_h264
+                try:
+                    transcode_to_h264(str(temp_output), str(output_video_path))
+                    # Remove temp file if successful
+                    temp_output.unlink(missing_ok=True)
+                except Exception as exc:
+                    logger.error("transcode_failed job_id=%s error=%s", job_id, exc)
+                    # Fallback to original if Transcode fails (rename back)
+                    if temp_output.exists():
+                        temp_output.replace(output_video_path)
+            
             _write_json(result_json_path, results)
 
             completed_at = datetime.utcnow()
@@ -160,6 +191,8 @@ class BackgroundExecutor:
                 result_json_path=str(result_json_path),
                 completed_at=completed_at,
                 runtime_ms=elapsed_s * 1000,
+                progress=100.0,
+                stage="completed",
             )
             logger.info(
                 "job_id=%s status=completed elapsed_s=%.2f result_json=%s",
@@ -175,5 +208,6 @@ class BackgroundExecutor:
                 error_message=str(exc),
                 completed_at=datetime.utcnow(),
                 runtime_ms=elapsed_s * 1000,
+                stage="failed",
             )
             logger.exception("job_id=%s status=failed error=%s", job_id, exc)

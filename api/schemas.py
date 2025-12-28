@@ -50,6 +50,7 @@ class JobSummary(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    stage: Optional[str] = None
     runtime_ms: Optional[float] = None
     error_message: Optional[str] = None
     input_video_path: Optional[str] = None
@@ -70,6 +71,7 @@ class StatusResponse(BaseModel):
     completed_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     progress: Optional[float] = None
+    stage: Optional[str] = None
     runtime_ms: Optional[float] = None
     worker_host: Optional[str] = None
     error_message: Optional[str] = None

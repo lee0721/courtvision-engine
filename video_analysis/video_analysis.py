@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from typing import Callable, Optional
 
 from action_recognition import ActionRecognitionModel
 from arena_mark_detector import ArenaMarkDetector
@@ -55,6 +56,7 @@ class VideoAnalysis:
         stub_path: str,
         use_stubs: bool = True,
         job_id: str | None = None,
+        progress_cb: Optional[Callable[[str, float], None]] = None,
     ) -> None:
         self.input_path = input_path
         self.output_path = output_path
@@ -62,6 +64,24 @@ class VideoAnalysis:
         self.use_stubs = use_stubs
         self.job_id = job_id or "cli"
         self.logger = logging.getLogger("courtvision.analysis")
+        self.progress_cb = progress_cb
+        # Rough stage ratios for progress reporting (0.0~1.0)
+        self._stage_ratios = {
+            "read_video": 0.1,
+            "init_models": 0.2,
+            "tracking": 0.4,
+            "arena_marks": 0.5,
+            "ball_processing": 0.55,
+            "team_assignment": 0.6,
+            "ball_acquisition": 0.65,
+            "ball_events": 0.7,
+            "tactical_view": 0.75,
+            "trajectory_metrics": 0.8,
+            "action_recognition": 0.85,
+            "drawing": 0.95,
+            "save_video": 0.98,
+            "build_result": 1.0,
+        }
 
     def _log_stage_start(self, stage: str) -> float:
         log_kv(
@@ -71,6 +91,8 @@ class VideoAnalysis:
             job_id=self.job_id,
             stage=stage,
         )
+        # Report progress at the start of each stage so frontend doesn't jump backward later
+        self._report_progress(stage)
         return time.perf_counter()
 
     def _log_stage_end(
@@ -93,6 +115,18 @@ class VideoAnalysis:
         )
         return duration_ms
 
+    def _report_progress(self, stage: str) -> None:
+        if not self.progress_cb:
+            return
+        ratio = self._stage_ratios.get(stage)
+        if ratio is None:
+            return
+        try:
+            self.progress_cb(stage, max(0.0, min(1.0, ratio)))
+        except Exception:
+            # Swallow progress callback errors to avoid breaking the pipeline
+            pass
+
     def run(self) -> dict[str, object]:
         stage_timings: dict[str, float] = {}
         current_stage = "read_video"
@@ -104,6 +138,7 @@ class VideoAnalysis:
             if not video_frames:
                 raise ValueError(f"No frames read from input video: {self.input_path}")
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Initialize trackers
             # player_tracker = DeepSortPlayerTracker(PLAYER_DETECTOR_PATH)
@@ -121,6 +156,7 @@ class VideoAnalysis:
                 device=ACTION_DEVICE,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Run detectors
             current_stage = "tracking"
@@ -138,6 +174,7 @@ class VideoAnalysis:
                 job_id=self.job_id,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Run keypoint extractor
             current_stage = "arena_marks"
@@ -149,6 +186,7 @@ class VideoAnalysis:
                 job_id=self.job_id,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Remove wrong ball detections
             current_stage = "ball_processing"
@@ -157,6 +195,7 @@ class VideoAnalysis:
             # Interpolate ball tracks
             ball_tracks = ball_tracker.interpolate_ball_positions(ball_tracks)
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Assign player teams
             current_stage = "team_assignment"
@@ -173,6 +212,7 @@ class VideoAnalysis:
                 job_id=self.job_id,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Ball acquisition
             current_stage = "ball_acquisition"
@@ -183,6 +223,7 @@ class VideoAnalysis:
                 ball_tracks,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Detect passes
             current_stage = "ball_events"
@@ -194,6 +235,7 @@ class VideoAnalysis:
                 player_assignment,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Tactical view
             current_stage = "tactical_view"
@@ -210,6 +252,7 @@ class VideoAnalysis:
                 player_tracks,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Speed and distance calculator
             current_stage = "trajectory_metrics"
@@ -227,6 +270,7 @@ class VideoAnalysis:
                 player_distances_per_frame,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Run action recognition
             current_stage = "action_recognition"
@@ -242,6 +286,7 @@ class VideoAnalysis:
                 job_id=self.job_id,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Initialize drawers
             current_stage = "drawing"
@@ -323,12 +368,14 @@ class VideoAnalysis:
                 player_tracks,
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             # Save video
             current_stage = "save_video"
             start = self._log_stage_start(current_stage)
             save_video(output_video_frames, self.output_path)
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             current_stage = "build_result"
             start = self._log_stage_start(current_stage)
@@ -342,6 +389,7 @@ class VideoAnalysis:
                 len(video_frames),
             )
             stage_timings[current_stage] = self._log_stage_end(current_stage, start)
+            self._report_progress(current_stage)
 
             total_ms = sum(stage_timings.values())
             log_kv(
