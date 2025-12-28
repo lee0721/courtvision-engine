@@ -20,5 +20,6 @@ source activate bball
 #python main.py input_videos/video_1.mp4 --output_video output_videos/video_result_1.mp4
 #python main.py input_videos/video_2.mp4 --output_video output_videos/video_result_2.mp4
 #python main.py input_videos/test_1.mp4 --output_video output_videos/test_result_1.mp4
-python main.py input_videos/test_2.mp4 --output_video output_videos/test_result_2.mp4
+#python main.py input_videos/test_2.mp4 --output_video output_videos/test_result_2.mp4
+python main.py input_videos/IND_vs_NYK_Q1_HalfCourt_Offense.mp4 --output_video output_videos/test_result_2.mp4
 #python main.py input_videos/test_3.mp4 --output_video output_videos/test_result_3.mp4
