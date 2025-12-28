@@ -13,7 +13,7 @@ movement metrics.
 **Demo (2m)**  
 <video controls width="640">
   <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4" type="video/mp4">
-  ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">Open demo_silent.mp4</a>
+  ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
 </video>
 
 ## Features ✨
