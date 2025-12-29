@@ -7,20 +7,20 @@ ball-possession heuristics, tactical-view projection, and action recognition to
 produce an annotated video that surfaces passes, interceptions, and per-player
 movement metrics.
 
-## Project Overview 🎯
-[🎥 Explanation video](https://drive.google.com/file/d/1-hqNvQog2tOV4v0bxwxdczk2CtINs8SM/view?usp=sharing)
+### 🎥 Demos & Walkthroughs
 
-**Demo (2m)**  
-<video controls width="640">
-  <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4" type="video/mp4">
-  ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
-</video>
+- **🚀 Explanation Video (Technical Deep Dive)**:  
+  [**Click to Watch on Google Drive** ↗](https://drive.google.com/file/d/1-hqNvQog2tOV4v0bxwxdczk2CtINs8SM/view?usp=sharing)  
+  *A comprehensive walkthrough of the system architecture and pipeline stages.*
 
-## Engineering Highlights (Dec 2025)
-- **Idempotent + restart-safe jobs** – `POST /analysis` accepts `Idempotency-Key`; on restart any in-flight jobs are marked `failed` and can be retried via `POST /jobs/{id}/retry`.
-- **Stage-aware progress** – status JSON includes stage (`read_video → init_models → tracking → arena_marks → ball_processing → team_assignment → action/drawing → save`) and percent; Streamlit UI shows the same ticks.
-- **Stub caching for fast iteration** – heavy detections/classifications are serialized; cold tracking/arena marks can take minutes, but warm runs with stub hits drop to milliseconds (iteration time cut ~90%+).
-- **Observability & CI** – structured JSON/logs, p95/p99 metrics, GitHub Actions + Docker/compose.
+- **🏀 System Demo (2 min)**:
+  <video controls width="100%">
+    <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4" type="video/mp4">
+    <p>
+      Your browser does not support HTML video. 
+      <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">Download the video here</a>.
+    </p>
+  </video>
 
 ## Features ✨
 - **Player & ball tracking** – YOLOv8 detections paired with ByteTrack keep
