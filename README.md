@@ -58,18 +58,18 @@ movement metrics.
 ## Pipeline at a Glance 🧭
 ```mermaid
 graph TD
-    Video[Video Frames] -->|Input| YOLO_P[YOLO / ByteTrack]
-    Video -->|Input| YOLO_B[YOLO Ball Detector]
-    YOLO_P -->|Player Tracks| CLIP[CLIP Classifier]
-    YOLO_B -->|Ball Tracks| Filter[Filter & Interpolate]
-    CLIP -->|Team Assignments| Drawer[Drawers & Overlay]
-    Filter -->|Ball Position| Poss[Possession Heuristics]
-    Poss -->|Pass/Intercept| Events[Event Detector]
-    Video -->|Input| Keypoints[Court Mark Detector]
-    Keypoints -->|Homography| Project[Tactical Projection]
-    Project -->|Meters/Speed| Kinetics[Trajectory Analytics]
-    Video -->|Crops| Action[R(2+1)D Action Model]
-    Drawer -->|Render| Output[Annotated Video]
+    Video[Video Frames] --> YOLO_P[YOLO / ByteTrack]
+    Video --> YOLO_B[YOLO Ball Detector]
+    YOLO_P --> CLIP[CLIP Classifier]
+    YOLO_B --> Filter[Filter & Interpolate]
+    CLIP --> Drawer[Drawers & Overlay]
+    Filter --> Poss[Possession Heuristics]
+    Poss --> Events[Event Detector]
+    Video --> Keypoints[Court Mark Detector]
+    Keypoints --> Project[Tactical Projection]
+    Project --> Kinetics[Trajectory Analytics]
+    Video --> Action["R(2+1)D Action Model"]
+    Drawer --> Output[Annotated Video]
 ```
 
 ## Service Flow (API) 🔌
