@@ -1,6 +1,13 @@
 # CourtVision Engine 🏀
 [![pytest](https://github.com/lee0721/courtvision-engine/actions/workflows/pytest.yml/badge.svg)](https://github.com/lee0721/courtvision-engine/actions/workflows/pytest.yml)
 
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?logo=pytorch&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?logo=opencv&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 CourtVision Engine is a computer-vision toolkit for breaking down half-court basketball footage. The
 pipeline combines multi-object tracking, jersey-based team classification,
 ball-possession heuristics, tactical-view projection, and action recognition to
@@ -41,27 +48,52 @@ movement metrics.
 - **Stub caching** – every heavy module can persist intermediate results
   (detections, classifications, predictions) as pickled stubs so subsequent runs
   iterate quickly.
+- **Stage-aware + idempotent API** – progress by stage in JSON/UI, idempotent submissions, and retry for failed jobs.
+
+## Design Decisions 💡
+- **SQLite for JobStore** – lightweight, file-backed, enough for single-node runs without adding Postgres ops overhead.
+- **Stub caching** – separates logic iteration from inference cost; warm runs cut iteration time by ~90%+ (cold minutes → warm milliseconds).
+- **Decoupled worker** – long video jobs run in a background executor to keep the API responsive for status/results.
 
 ## Pipeline at a Glance 🧭
-```
-Video Frames
-   │
-   ├── YOLO / ByteTrack → player_tracks
-   ├── YOLO (ball)      → ball_tracks → filtering → interpolation
-   │
-   ├── CLIP classifier      → team assignments
-   ├── Ball possession      → passes / interceptions
-   ├── Court mark detector  → homography / tactical positions
-   ├── R(2+1)D action model → action labels
-   └── Trajectory kinetics  → per-player distance & speed
-         ↓
-    Drawers overlay all artefacts → rendered analysis video
+```mermaid
+graph TD
+    Video[Video Frames] -->|Input| YOLO_P[YOLO / ByteTrack]
+    Video -->|Input| YOLO_B[YOLO Ball Detector]
+    YOLO_P -->|Player Tracks| CLIP[CLIP Classifier]
+    YOLO_B -->|Ball Tracks| Filter[Filter & Interpolate]
+    CLIP -->|Team Assignments| Drawer[Drawers & Overlay]
+    Filter -->|Ball Position| Poss[Possession Heuristics]
+    Poss -->|Pass/Intercept| Events[Event Detector]
+    Video -->|Input| Keypoints[Court Mark Detector]
+    Keypoints -->|Homography| Project[Tactical Projection]
+    Project -->|Meters/Speed| Kinetics[Trajectory Analytics]
+    Video -->|Crops| Action[R(2+1)D Action Model]
+    Drawer -->|Render| Output[Annotated Video]
 ```
 
 ## Service Flow (API) 🔌
-```
-Client → POST /analysis → JobStore (SQLite) → BackgroundExecutor → VideoAnalysis
-   → output_videos/*.mp4 + output_videos/*.json → GET /results/{job_id}
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as FastAPI
+    participant DB as SQLite JobStore
+    participant Worker as Background Executor
+
+    Client->>API: POST /analysis (Idempotency-Key)
+    API->>DB: Create Job (QUEUED)
+    API-->>Client: job_id
+    API->>Worker: Dispatch task (async)
+    Worker->>Worker: Run VideoAnalysis Pipeline
+    loop Progress updates
+        Worker->>DB: Update stage & percent
+    end
+    Worker->>DB: Mark DONE / save paths
+    Client->>API: GET /status/{job_id}
+    API->>DB: Query status
+    DB-->>API: Status JSON
+    Client->>API: GET /results/{job_id}
+    API-->>Client: Video + JSON paths
 ```
 - Status JSON includes stage + percent; retry is available via `POST /jobs/{job_id}/retry` (idempotent submissions reuse the same job).
 
@@ -81,6 +113,18 @@ curl -X POST http://127.0.0.1:8000/analysis \
 Check status (stage-aware):
 ```bash
 curl http://127.0.0.1:8000/status/<job_id>
+```
+Example status (trimmed):
+```json
+{
+  "job_id": "<job_id>",
+  "status": "running",
+  "stage": "tracking",
+  "progress": 40.0,
+  "output_video_path": "output_videos/demo_api.mp4",
+  "result_json_path": "output_videos/demo_api.json",
+  "error_message": null
+}
 ```
 Retry a failed job:
 ```bash
