@@ -19,8 +19,6 @@ movement metrics.
     ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
   </video>  
 
-
-
 ## Features ✨
 - **Player & ball tracking** – YOLOv8 detections paired with ByteTrack keep
   persistent IDs for every player while a separate detector follows the ball,
@@ -218,8 +216,7 @@ Stub files are stored under the `stub_path` directory:
 - `action_recognition_predictions.pkl`
 
 ### Testing
-Tests: pytest - 5 passed (unit + integration).
-Test log: `logs/pytest_20251223_182551.log`.
+Tests: pytest - 8 passed (unit + integration).
 ```bash
 python -m pytest
 ```
