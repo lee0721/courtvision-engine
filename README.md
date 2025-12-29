@@ -16,6 +16,12 @@ movement metrics.
   ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
 </video>
 
+## Engineering Highlights (Dec 2025)
+- **Idempotent + restart-safe jobs** – `POST /analysis` accepts `Idempotency-Key`; on restart any in-flight jobs are marked `failed` and can be retried via `POST /jobs/{id}/retry`.
+- **Stage-aware progress** – status JSON includes stage (`read_video → init_models → tracking → arena_marks → ball_processing → team_assignment → action/drawing → save`) and percent; Streamlit UI shows the same ticks.
+- **Stub caching for fast iteration** – heavy detections/classifications are serialized; cold tracking/arena marks can take minutes, but warm runs with stub hits drop to milliseconds (iteration time cut ~90%+).
+- **Observability & CI** – structured JSON/logs, p95/p99 metrics, GitHub Actions + Docker/compose.
+
 ## Features ✨
 - **Player & ball tracking** – YOLOv8 detections paired with ByteTrack keep
   persistent IDs for every player while a separate detector follows the ball,
@@ -59,6 +65,29 @@ Video Frames
 ```
 Client → POST /analysis → JobStore (SQLite) → BackgroundExecutor → VideoAnalysis
    → output_videos/*.mp4 + output_videos/*.json → GET /results/{job_id}
+```
+- Status JSON includes stage + percent; retry is available via `POST /jobs/{job_id}/retry` (idempotent submissions reuse the same job).
+
+### Quick API Examples
+Submit (idempotent):
+```bash
+curl -X POST http://127.0.0.1:8000/analysis \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: demo-123' \
+  -d '{
+    "input_video_path": "input_videos/sample.mp4",
+    "output_video": "output_videos/sample_api.mp4",
+    "stub_path": "stubs/sample_api",
+    "use_stubs": true
+  }'
+```
+Check status (stage-aware):
+```bash
+curl http://127.0.0.1:8000/status/<job_id>
+```
+Retry a failed job:
+```bash
+curl -X POST http://127.0.0.1:8000/jobs/<job_id>/retry
 ```
 
 ## Performance (Benchmarks) ⚡
@@ -195,6 +224,11 @@ Test log: `logs/pytest_20251223_182551.log`.
 ```bash
 python -m pytest
 ```
+
+### Troubleshooting
+- If a run crashes or stubs look corrupted: `rm -rf stubs/<run_name> output_videos/<run_name>*` and resubmit with a new `Idempotency-Key`.
+- On some CPUs set `OMP_NUM_THREADS=1` to avoid local BLAS/torch crashes.
+- If the embedded demo does not auto-play, click the text link to open it.
 
 ### Docker (API + CLI)
 Build image:
