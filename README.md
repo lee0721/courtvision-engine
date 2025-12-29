@@ -58,36 +58,36 @@ movement metrics.
 ## Pipeline at a Glance 🧭
 ```mermaid
 flowchart TB
-    In[Input Video (.mp4)]
-    Extract[Frame Extraction]
-    Subgraph1[[Object Detection & Tracking]]
-    Ball[Ball Detection & Tracking]
-    Player[Player Detection & Tracking]
-    end
-    Subgraph2[[Team & Ball Analysis]]
-    Team[Team Classification (CLIP)]
-    Poss[Ball Possession Estimation]
-    end
-    Subgraph3[[Court & Movement Analysis]]
-    Marks[Arena Mark Detection]
-    Tact[Tactical View / Homography]
-    Events[Ball Event Detection]
-    Kinetics[Trajectory & Kinetics]
-    end
-    Action[Action Recognition (R(2+1)D)]
-    Draw[Visualization & Rendering]
-    Out[Output Annotated Video]
+    In["Input Video (.mp4)"]
+    Extract["Frame Extraction"]
+    Detect["Object Detection & Tracking"]
+    Ball["Ball Detection & Tracking"]
+    Player["Player Detection & Tracking"]
+    TeamBall["Team & Ball Analysis"]
+    Team["Team Classification (CLIP)"]
+    Poss["Ball Possession Estimation"]
+    Court["Court & Movement Analysis"]
+    Marks["Arena Mark Detection"]
+    Tact["Tactical View / Homography"]
+    Events["Ball Event Detection"]
+    Kinetics["Trajectory & Kinetics"]
+    Action["Action Recognition (R2+1D)"]
+    Draw["Visualization & Rendering"]
+    Out["Output Annotated Video"]
 
-    In --> Extract --> Subgraph1
-    Subgraph1 --> Subgraph2
-    Subgraph2 --> Subgraph3
-    Subgraph3 --> Action --> Draw --> Out
+    In --> Extract --> Detect
+    Detect --> TeamBall
+    TeamBall --> Court
+    Court --> Action --> Draw --> Out
 
-    %% stub hints
-    Subgraph1 -. stubs .-> Subgraph1
-    Subgraph2 -. stubs .-> Subgraph2
-    Action -. stubs .-> Action
-
+    Detect --> Ball
+    Detect --> Player
+    TeamBall --> Team
+    TeamBall --> Poss
+    Court --> Marks
+    Court --> Tact
+    Court --> Events
+    Court --> Kinetics
 ```
 
 ## Service Flow (API) 🔌
