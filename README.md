@@ -13,11 +13,14 @@ movement metrics.
   [**Click to Watch on Google Drive** ↗](https://drive.google.com/file/d/1-hqNvQog2tOV4v0bxwxdczk2CtINs8SM/view?usp=sharing)  
   *A comprehensive walkthrough of the system architecture and pipeline stages.*
 
-- **🏀 System Demo (2 min)**:
-  <video controls width="100%">
-  <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4" type="video/mp4">
-  ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
-</video>
+- **🏀 System Demo (2 min)**  
+  <video controls width="640">
+    <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4" type="video/mp4">
+    ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
+  </video>  
+  *(If it doesn’t auto-play inline, click the link above.)*
+
+
 
 ## Features ✨
 - **Player & ball tracking** – YOLOv8 detections paired with ByteTrack keep
