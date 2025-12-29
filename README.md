@@ -18,7 +18,6 @@ movement metrics.
     <source src="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4" type="video/mp4">
     ▶️ <a href="https://cdn.jsdelivr.net/gh/lee0721/courtvision-engine@main/demo_silent.mp4">demo.mp4</a>
   </video>  
-  *(If it doesn’t auto-play inline, click the link above.)*
 
 
 
